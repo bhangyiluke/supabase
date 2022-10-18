@@ -7,6 +7,8 @@
 
 # Supabase
 
+[![Tests](https://github.com/bhangyiluke/supabase/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/bhangyiluke/supabase/actions/workflows/integration-tests.yml)
+
 [Supabase](https://supabase.com) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
 
 - [x] Hosted Postgres Database. [Docs](https://supabase.com/docs/guides/database)
