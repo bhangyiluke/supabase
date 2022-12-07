@@ -7,7 +7,7 @@ module.exports = [
   {
     permanent: true,
     source: '/docs/guides/storage-caching',
-    destination: '/docs/guides/storage-cdn',
+    destination: '/docs/guides/storage/cdn',
   },
   {
     permanent: true,
@@ -588,13 +588,8 @@ module.exports = [
   },
   {
     permanent: true,
-    source: '/guides/database/introduction',
-    destination: '/guides/database',
-  },
-  {
-    permanent: true,
-    source: '/guides/auth',
-    destination: '/guides/auth/intro',
+    source: '/docs/guides/database/introduction',
+    destination: '/docs/guides/database',
   },
   {
     permanent: false,
@@ -1325,8 +1320,8 @@ module.exports = [
   },
   {
     permanent: true,
-    source: '/docs/guides/realtime/postgres-changes',
-    destination: '/docs/guides/realtime/postgres-cdc',
+    source: '/docs/guides/realtime/postgres-cdc',
+    destination: '/docs/guides/realtime/postgres-changes',
   },
   {
     permanent: true,
@@ -1357,6 +1352,11 @@ module.exports = [
     permanent: true,
     source: '/docs/reference/auth-helpers/sveltekit',
     destination: '/docs/guides/auth/auth-helpers/sveltekit',
+  },
+  {
+    permanent: true,
+    source: '/docs/guides/database/migrating-between-projects',
+    destination: '/docs/guides/platform/migrating-and-upgrading-projects',
   },
 
   // supabase-js v1 to v2 redirects
@@ -1437,7 +1437,7 @@ module.exports = [
     source: '/docs/reference/javascript/auth-api-updateuserbyid',
     destination: '/docs/reference/javascript/v1/auth-api-updateuserbyid',
   },
-  // signIn method is now split into signInWithPassword ,signInWithPasswordless ,signInWithOAuth
+  // signIn method is now split into signInWithPassword ,signInWithOtp ,signInWithOAuth
   // send traffic to v1 docs instead
   {
     permanent: true,
@@ -1474,5 +1474,105 @@ module.exports = [
     permanent: true,
     source: '/docs/reference/javascript/getsubscriptions',
     destination: '/docs/reference/javascript/v1/getsubscriptions',
+  },
+  {
+    permanent: true,
+    source: '/docs/guides/cli/cicd-workflows',
+    destination: '/docs/guides/cli/managing-environments',
+  },
+
+  // supabase-flutter v0 to v1 redirects
+  // v0: /auth-update
+  // v1: /auth-updateuser
+  {
+    permanent: true,
+    source: '/docs/reference/dart/auth-update',
+    destination: '/docs/reference/dart/auth-updateuser',
+  },
+  // v0: /auth-api-resetpasswordforemail
+  // v1: /auth-resetpasswordforemail
+  {
+    permanent: true,
+    source: '/docs/reference/dart/reset-password-email',
+    destination: '/docs/reference/dart/auth-resetpasswordforemail',
+  },
+  // signIn method is now split into signInWithPassword ,signInWithOtp ,signInWithOAuth
+  // send traffic to v0 docs instead
+  {
+    permanent: true,
+    source: '/docs/reference/dart/auth-signin',
+    destination: '/docs/reference/dart/v0/auth-signin',
+  },
+  // v0: /auth-session
+  // v1: /auth-currentsession
+  {
+    permanent: true,
+    source: '/docs/reference/dart/auth-session',
+    destination: '/docs/reference/dart/auth-currentsession',
+  },
+  // v0: /auth-user
+  // v1: /auth-currentuser
+  {
+    permanent: true,
+    source: '/docs/reference/dart/auth-user',
+    destination: '/docs/reference/dart/auth-currentuser',
+  },
+  // v0: /auth-signinwithprovider
+  // v1: /auth-signinwithoauth
+  {
+    permanent: true,
+    source: '/docs/reference/dart/v0/auth-signinwithprovider',
+    destination: '/docs/reference/dart/auth-signinwithoauth',
+  },
+  // realtime methods been replaced with new names
+  {
+    permanent: true,
+    source: '/docs/reference/dart/removesubscription',
+    destination: '/docs/reference/dart/v0/removesubscription',
+  },
+  {
+    permanent: true,
+    source: '/docs/reference/dart/getsubscriptions',
+    destination: '/docs/reference/dart/v0/getsubscriptions',
+  },
+  {
+    permanent: true,
+    source: '/docs/going-into-prod',
+    destination: '/docs/guides/platform/going-into-prod',
+  },
+  {
+    permanent: true,
+    source: '/docs/guides/platform/disk-usage',
+    destination: '/docs/guides/platform/database-usage',
+  },
+  {
+    permanent: true,
+    source: '/sign-in',
+    destination: 'https://app.supabase.com/sign-in',
+  },
+  {
+    permanent: true,
+    source: '/sign-up',
+    destination: 'https://app.supabase.com/sign-up',
+  },
+  {
+    permanent: true,
+    source: '/forgot-password',
+    destination: 'https://app.supabase.com/forgot-password',
+  },
+  {
+    permanent: true,
+    source: '/docs/guides/storage-cdn',
+    destination: '/docs/guides/storage/cdn',
+  },
+  {
+    permanent: true,
+    source: '/docs/guides/functions/examples',
+    destination: '/docs/guides/functions',
+  },
+  {
+    permanent: true,
+    source: '/projects',
+    destination: 'https://app.supabase.com/projects',
   },
 ]

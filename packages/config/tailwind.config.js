@@ -16,13 +16,13 @@ module.exports = ui({
   mode: 'JIT',
   content: [
     '../../packages/common/**/*.{ts,tsx}',
+    '../../packages/ui/**/*.{tsx,ts,js}',
     './src/**/*.{ts,tsx,mdx}',
     './components/**/*.tsx',
     './layouts/**/*.tsx',
     './pages/**/*.{tsx,mdx}',
     './_blog/*.mdx',
     // purge styles from supabase ui theme
-    '../../node_modules/@supabase/ui/dist/config/default-theme.js',
   ],
   darkMode: 'class', // 'media' or 'class'
   // mode: 'jit',
@@ -168,7 +168,8 @@ module.exports = ui({
           },
         },
       }),
-      // screens: {
+      screens: {
+        xs: '480px'
       //   sm: '640px',
       //   // => @media (min-width: 640px) { ... }
       //   md: '768px',
@@ -179,7 +180,7 @@ module.exports = ui({
       //   // => @media (min-width: 1280px) { ... }
       //   '2xl': '1536px',
       //   // => @media (min-width: 1536px) { ... }
-      // },
+      },
       // colors: {
       //   'gray-light': '#7B7F86',
       //   'gray-dark': '#7B7F86',
