@@ -1,36 +1,39 @@
-import { FC, useState } from 'react'
+import { FC, useRef, useState } from 'react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { Listbox, IconLoader, Button, IconPlus, IconAlertCircle, IconCreditCard } from 'ui'
 import { PermissionAction } from '@supabase/shared-types/out/constants'
 
-import { checkPermissions, useFlag, useStore } from 'hooks'
+import { checkPermissions, useStore } from 'hooks'
 import { PRICING_TIER_PRODUCT_IDS, STRIPE_PRODUCT_IDS } from 'lib/constants'
 import { SubscriptionPreview } from '../Billing.types'
 import { getProductPrice, validateSubscriptionUpdatePayload } from '../Billing.utils'
 import PaymentTotal from './PaymentTotal'
 import InformationBox from 'components/ui/InformationBox'
-import { DatabaseAddon } from '../AddOns/AddOns.types'
+import { SubscriptionAddon } from '../AddOns/AddOns.types'
 import { getPITRDays } from './PaymentSummaryPanel.utils'
 import ConfirmPaymentModal from './ConfirmPaymentModal'
+import { StripeSubscription } from '../Subscription/Subscription.types'
 
 // [Joshen] PITR stuff can be undefined for now until we officially launch PITR self serve
 
 interface Props {
   isRefreshingPreview: boolean
+  currentSubscription?: StripeSubscription
   subscriptionPreview?: SubscriptionPreview
 
   currentPlan: any
   currentAddons: {
-    computeSize: DatabaseAddon
-    pitrDuration: DatabaseAddon
-    customDomains: DatabaseAddon
+    computeSize: SubscriptionAddon
+    pitrDuration: SubscriptionAddon
+    customDomains: SubscriptionAddon
+    supportPlan?: SubscriptionAddon
   }
 
   selectedPlan?: any
   selectedAddons: {
-    computeSize: DatabaseAddon
-    pitrDuration: DatabaseAddon
-    customDomains: DatabaseAddon
+    computeSize: SubscriptionAddon
+    pitrDuration: SubscriptionAddon
+    customDomains: SubscriptionAddon
   }
 
   isSpendCapEnabled: boolean
@@ -41,6 +44,8 @@ interface Props {
   onSelectAddNewPaymentMethod: () => void
   onConfirmPayment: () => void
   isSubmitting: boolean
+
+  captcha: React.ReactNode
 }
 
 // Use case of this panel is actually only for upgrading from Free to Pro
@@ -53,6 +58,7 @@ interface Props {
 const PaymentSummaryPanel: FC<Props> = ({
   isRefreshingPreview,
   isSpendCapEnabled,
+  currentSubscription,
   subscriptionPreview,
 
   currentPlan,
@@ -68,6 +74,7 @@ const PaymentSummaryPanel: FC<Props> = ({
   onSelectAddNewPaymentMethod,
   onConfirmPayment,
   isSubmitting,
+  captcha,
 }) => {
   const { ui } = useStore()
   const projectRegion = ui.selectedProject?.region
@@ -107,7 +114,16 @@ const PaymentSummaryPanel: FC<Props> = ({
     } else return plan.name
   }
 
-  const validateOrder = () => {
+  const getAddonPriceFromSubscription = (
+    key: 'computeSize' | 'pitrDuration' | 'customDomains' | 'supportPlan'
+  ) => {
+    return (
+      ((currentSubscription?.addons ?? []).find((addon) => addon.prod_id === currentAddons[key]?.id)
+        ?.unit_amount ?? 0) / 100
+    ).toFixed(2)
+  }
+
+  const validateOrder = async () => {
     const error = validateSubscriptionUpdatePayload(selectedAddons)
     if (error) {
       return ui.setNotification({
@@ -154,7 +170,9 @@ const PaymentSummaryPanel: FC<Props> = ({
         {/* Add on details */}
         {projectRegion !== 'af-south-1' && (
           <div className="space-y-1">
-            <p className="text-sm">Selected add-ons</p>
+            <p className="text-sm text-scale-1100">Selected add-ons</p>
+
+            {/* Compute size */}
             <div className="flex items-center justify-between">
               <p
                 className={`${isChangingComputeSize ? 'text-scale-1100 line-through' : ''} text-sm`}
@@ -164,7 +182,7 @@ const PaymentSummaryPanel: FC<Props> = ({
               <p
                 className={`${isChangingComputeSize ? 'text-scale-1100 line-through' : ''} text-sm`}
               >
-                ${(getProductPrice(currentAddons.computeSize).unit_amount / 100).toFixed(2)}
+                ${getAddonPriceFromSubscription('computeSize')}
               </p>
             </div>
             {isChangingComputeSize && (
@@ -175,6 +193,8 @@ const PaymentSummaryPanel: FC<Props> = ({
                 </p>
               </div>
             )}
+
+            {/* PITR Duration */}
             {currentAddons.pitrDuration?.id !== undefined && (
               <div className="flex items-center justify-between">
                 <p
@@ -189,7 +209,7 @@ const PaymentSummaryPanel: FC<Props> = ({
                     isChangingPITRDuration ? 'text-scale-1100 line-through' : ''
                   } text-sm`}
                 >
-                  ${(getProductPrice(currentAddons.pitrDuration).unit_amount / 100).toFixed(2)}
+                  ${getAddonPriceFromSubscription('pitrDuration')}
                 </p>
               </div>
             )}
@@ -201,6 +221,8 @@ const PaymentSummaryPanel: FC<Props> = ({
                 </p>
               </div>
             )}
+
+            {/* Custom Domains */}
             {currentAddons.customDomains?.id !== undefined && (
               <div className="flex items-center justify-between">
                 <p
@@ -215,7 +237,7 @@ const PaymentSummaryPanel: FC<Props> = ({
                     isChangingCustomDomains ? 'text-scale-1100 line-through' : ''
                   } text-sm`}
                 >
-                  ${(getProductPrice(currentAddons.customDomains).unit_amount / 100).toFixed(2)}
+                  ${getAddonPriceFromSubscription('customDomains')}
                 </p>
               </div>
             )}
@@ -225,6 +247,14 @@ const PaymentSummaryPanel: FC<Props> = ({
                 <p className="text-sm">
                   ${(getProductPrice(selectedAddons.customDomains).unit_amount / 100).toFixed(2)}
                 </p>
+              </div>
+            )}
+
+            {/* Support Plan */}
+            {currentAddons.supportPlan !== undefined && (
+              <div className="flex items-center justify-between">
+                <p className="text-sm">{currentAddons.supportPlan?.name}</p>
+                <p className="text-sm">${getAddonPriceFromSubscription('supportPlan')}</p>
               </div>
             )}
 
@@ -354,6 +384,8 @@ const PaymentSummaryPanel: FC<Props> = ({
             </Listbox>
           )}
         </div>
+
+        <div className="self-center">{captcha}</div>
 
         <div className="flex items-center justify-end">
           <Tooltip.Root delayDuration={0}>
