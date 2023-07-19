@@ -1,33 +1,27 @@
-import { useState } from 'react'
-import { Button, Modal, IconTrash } from 'ui'
-import { useStore } from 'hooks'
-import { delete_ } from 'lib/common/fetch'
-import { API_URL } from 'lib/constants'
-import { AccessToken, useAccessTokens } from 'hooks/queries/useAccessTokens'
+import { useAccessTokenDeleteMutation } from 'data/access-tokens/access-tokens-delete-mutation'
+import { AccessToken, useAccessTokensQuery } from 'data/access-tokens/access-tokens-query'
 import { observer } from 'mobx-react-lite'
+import { useState } from 'react'
+import { Button, IconTrash, Modal } from 'ui'
 
 import Table from 'components/to-be-cleaned/Table'
 import ConfirmationModal from 'components/ui/ConfirmationModal'
+import { useStore } from 'hooks'
 
 const AccessTokenList = observer(() => {
   const { ui } = useStore()
-  const { mutateDeleteToken } = useAccessTokens()
-  const { tokens, isLoading } = useAccessTokens()
+  const { data: tokens, isLoading } = useAccessTokensQuery()
+  const { mutate: deleteToken } = useAccessTokenDeleteMutation({
+    onSuccess: () => {
+      ui.setNotification({ category: 'success', message: 'Successfully deleted access token' })
+      setIsOpen(false)
+    },
+  })
+
   const [isOpen, setIsOpen] = useState(false)
   const [token, setToken] = useState<AccessToken | undefined>(undefined)
 
-  async function onDeleteToken(tokenId: number) {
-    const response = await delete_(`${API_URL}/profile/access-tokens/${tokenId}`)
-    if (response.error) {
-      ui.setNotification({
-        category: 'error',
-        message: `Failed to delete token: ${response.error.message}`,
-      })
-    } else {
-      mutateDeleteToken(tokenId)
-      setIsOpen(false)
-    }
-  }
+  const onDeleteToken = async (tokenId: number) => deleteToken({ id: tokenId })
 
   return (
     <>
@@ -50,7 +44,7 @@ const AccessTokenList = observer(() => {
               </Table.tr>
             ) : (
               <>
-                {tokens?.map((x: AccessToken) => {
+                {tokens?.map((x) => {
                   return (
                     <Table.tr key={x.token_alias}>
                       <Table.td>
@@ -62,15 +56,18 @@ const AccessTokenList = observer(() => {
                       </Table.td>
                       <Table.td>
                         <Button
-                          as="span"
-                          type="danger"
-                          title="delete token"
+                          asChild
+                          type="default"
+                          title="Delete token"
+                          className="px-1"
                           onClick={() => {
                             setToken(x)
                             setIsOpen(true)
                           }}
                           icon={<IconTrash />}
-                        ></Button>
+                        >
+                          <span></span>
+                        </Button>
                       </Table.td>
                     </Table.tr>
                   )
@@ -85,18 +82,18 @@ const AccessTokenList = observer(() => {
         danger={true}
         header="Confirm to delete"
         buttonLabel="Delete"
+        buttonLoadingLabel="Deleting"
         onSelectCancel={() => setIsOpen(false)}
         onSelectConfirm={() => {
           if (token) onDeleteToken(token.id)
         }}
-        children={
-          <Modal.Content>
-            <p className="py-4 text-sm text-scale-1100">
-              {`This action cannot be undone. Are you sure you want to delete "${token?.name}" token?`}
-            </p>
-          </Modal.Content>
-        }
-      />
+      >
+        <Modal.Content>
+          <p className="py-4 text-sm text-scale-1100">
+            {`This action cannot be undone. Are you sure you want to delete "${token?.name}" token?`}
+          </p>
+        </Modal.Content>
+      </ConfirmationModal>
     </>
   )
 })

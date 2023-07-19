@@ -1,7 +1,7 @@
 import HCaptcha from '@hcaptcha/react-hcaptcha'
 import { useStore } from 'hooks'
 import { post } from 'lib/common/fetch'
-import { API_URL } from 'lib/constants'
+import { API_URL, BASE_PATH } from 'lib/constants'
 import { useRouter } from 'next/router'
 import { useRef, useState } from 'react'
 import { Button, Form, Input } from 'ui'
@@ -30,22 +30,21 @@ const ForgotPasswordForm = () => {
       token = captchaResponse?.response ?? null
     }
 
-    const response = await post(`${API_URL}/reset-password`, {
+    const { error } = await post(`${API_URL}/reset-password`, {
       email,
       hcaptchaToken: token ?? undefined,
       redirectTo: `${
         process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview'
-          ? process.env.NEXT_PUBLIC_VERCEL_URL
+          ? location.origin
           : process.env.NEXT_PUBLIC_SITE_URL
-      }/reset-password`,
+      }${BASE_PATH}/reset-password`,
     })
-    const error = response.error
 
     if (!error) {
       ui.setNotification({
         id: toastId,
         category: 'success',
-        message: `Password reset email sent successfully! Please check your email`,
+        message: `If you registered using your email and password, you will receive a password reset email.`,
       })
 
       await router.push('/sign-in')
@@ -56,7 +55,7 @@ const ForgotPasswordForm = () => {
       ui.setNotification({
         id: toastId,
         category: 'error',
-        message: error.message,
+        message: `Failed to send reset email: ${error.message}`,
       })
     }
   }
@@ -71,7 +70,7 @@ const ForgotPasswordForm = () => {
     >
       {({ isSubmitting }: { isSubmitting: boolean }) => {
         return (
-          <div className="flex flex-col space-y-4 pt-4">
+          <div className="flex flex-col pt-4 space-y-4">
             <Input
               id="email"
               name="email"
@@ -96,7 +95,7 @@ const ForgotPasswordForm = () => {
               />
             </div>
 
-            <div className="border-overlay-border border-t" />
+            <div className="border-t border-overlay-border" />
 
             <Button
               block

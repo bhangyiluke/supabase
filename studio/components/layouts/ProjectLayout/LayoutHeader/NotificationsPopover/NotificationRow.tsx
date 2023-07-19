@@ -1,18 +1,20 @@
-import dayjs from 'dayjs'
-import useSWR from 'swr'
-import { FC, useState } from 'react'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { Notification, NotificationStatus } from '@supabase/shared-types/out/notifications'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import dayjs from 'dayjs'
+import { useState } from 'react'
 
-import { useStore, useNotifications } from 'hooks'
-import { Project } from 'types'
-import { formatNotificationCTAText, formatNotificationText } from './NotificationRows.utils'
-import NotificationActions from './NotificationActions'
-import { get, delete_ } from 'lib/common/fetch'
+import { notificationKeys } from 'data/notifications/keys'
+import { useProjectsQuery } from 'data/projects/projects-query'
+import { useStore } from 'hooks'
+import { delete_, get } from 'lib/common/fetch'
 import { API_URL } from 'lib/constants'
+import { Project } from 'types'
 import { Button, IconX } from 'ui'
+import NotificationActions from './NotificationActions'
+import { formatNotificationCTAText, formatNotificationText } from './NotificationRows.utils'
 
-interface Props {
+export interface NotificationRowProps {
   notification: Notification
   onSelectRestartProject: (project: Project, notification: Notification) => void
   onSelectApplyMigration: (project: Project, notification: Notification) => void
@@ -20,30 +22,33 @@ interface Props {
   onSelectFinalizeMigration: (project: Project, notification: Notification) => void
 }
 
-const NotificationRow: FC<Props> = ({
+const NotificationRow = ({
   notification,
   onSelectRestartProject,
   onSelectApplyMigration,
   onSelectRollbackMigration,
   onSelectFinalizeMigration,
-}) => {
-  const { app, ui } = useStore()
-  const { refresh } = useNotifications()
+}: NotificationRowProps) => {
+  const { ui } = useStore()
+  const queryClient = useQueryClient()
   const [dismissing, setDismissing] = useState(false)
-  const [project] = app.projects.list((project: Project) => project.id === notification.project_id)
+  const { data: projects } = useProjectsQuery()
+  const project = projects?.find((project) => project.id === notification.project_id)
 
   const insertedAt = dayjs(notification.inserted_at).format('DD MMM YYYY, HH:mma')
   const changelogLink = (notification.data as any).changelog_link
   const availableActions = notification.meta?.actions_available ?? []
 
-  // [Joshen TODO] This should be removed after 5th November when the migration notifications
+  // [Joshen TODO] This should be removed after the env of Feb when the migration notifications
   // have been removed, double check with Qiao before removing.
   // Relevant PR: https://github.com/supabase/supabase/pull/9229
-  const { data: ownerReassignStatus } = useSWR(
-    (notification.data as any).upgrade_type === 'schema-migration'
-      ? `${API_URL}/database/${project.ref}/owner-reassign`
-      : null,
-    get
+  const { data: ownerReassignStatus } = useQuery(
+    ['projects', project?.ref, 'owner-reassign'],
+    ({ signal }) => get(`${API_URL}/database/${project?.ref}/owner-reassign`, { signal }),
+    {
+      enabled:
+        (notification.data as any).upgrade_type === 'schema-migration' && project !== undefined,
+    }
   )
 
   const dismissNotification = async (notificationId: string) => {
@@ -58,10 +63,12 @@ const NotificationRow: FC<Props> = ({
         duration: 4000,
       })
     } else {
-      refresh()
+      await queryClient.invalidateQueries(notificationKeys.list())
     }
     setDismissing(false)
   }
+
+  if (!project) return null
 
   return (
     <div className="flex py-2">
@@ -80,7 +87,7 @@ const NotificationRow: FC<Props> = ({
           <div className="w-1/10 flex justify-end">
             <div>
               <Tooltip.Root delayDuration={0}>
-                <Tooltip.Trigger>
+                <Tooltip.Trigger asChild>
                   <Button
                     className="!px-1 group"
                     type="text"
@@ -95,17 +102,19 @@ const NotificationRow: FC<Props> = ({
                     onClick={() => dismissNotification(notification.id)}
                   />
                 </Tooltip.Trigger>
-                <Tooltip.Content side="bottom">
-                  <Tooltip.Arrow className="radix-tooltip-arrow" />
-                  <div
-                    className={[
-                      'rounded bg-scale-100 py-1 px-2 leading-none shadow',
-                      'border border-scale-200',
-                    ].join(' ')}
-                  >
-                    <span className="text-xs text-scale-1200">Dismiss</span>
-                  </div>
-                </Tooltip.Content>
+                <Tooltip.Portal>
+                  <Tooltip.Content side="bottom">
+                    <Tooltip.Arrow className="radix-tooltip-arrow" />
+                    <div
+                      className={[
+                        'rounded bg-scale-100 py-1 px-2 leading-none shadow',
+                        'border border-scale-200',
+                      ].join(' ')}
+                    >
+                      <span className="text-xs text-scale-1200">Dismiss</span>
+                    </div>
+                  </Tooltip.Content>
+                </Tooltip.Portal>
               </Tooltip.Root>
             </div>
           </div>

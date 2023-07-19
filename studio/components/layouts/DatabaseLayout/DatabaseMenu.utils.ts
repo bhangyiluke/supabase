@@ -1,14 +1,13 @@
 import { Project } from 'types'
 import { ProductMenuGroup } from 'components/ui/ProductMenu/ProductMenu.types'
-import { useFlag } from 'hooks'
+import { IS_PLATFORM } from 'lib/constants'
 
-export const generateDatabaseMenu = (project?: Project): ProductMenuGroup[] => {
+export const generateDatabaseMenu = (
+  project?: Project,
+  foreignDataWrappersEnabled: boolean = false,
+  pgNetExtensionExists: boolean = false
+): ProductMenuGroup[] => {
   const ref = project?.ref ?? 'default'
-
-  const HOOKS_RELEASED = '2021-07-30T15:33:54.383Z'
-  const showHooksRoute = project?.inserted_at ? project.inserted_at > HOOKS_RELEASED : false
-
-  const foreignDataWrappersEnabled = useFlag('foreignDataWrappers')
 
   return [
     {
@@ -40,14 +39,13 @@ export const generateDatabaseMenu = (project?: Project): ProductMenuGroup[] => {
           url: `/project/${ref}/database/replication`,
           items: [],
         },
-        ...(showHooksRoute
+        ...(pgNetExtensionExists
           ? [
               {
                 name: 'Webhooks',
                 key: 'hooks',
                 url: `/project/${ref}/database/hooks`,
                 items: [],
-                label: 'ALPHA',
               },
             ]
           : []),
@@ -62,10 +60,20 @@ export const generateDatabaseMenu = (project?: Project): ProductMenuGroup[] => {
               },
             ]
           : []),
+        ...(IS_PLATFORM
+          ? [
+              {
+                name: 'Backups',
+                key: 'backups',
+                url: `/project/${ref}/database/backups/scheduled`,
+                items: [],
+              },
+            ]
+          : []),
         {
-          name: 'Backups',
-          key: 'backups',
-          url: `/project/${ref}/database/backups/scheduled`,
+          name: 'Migrations',
+          key: 'migrations',
+          url: `/project/${ref}/database/migrations`,
           items: [],
         },
       ],

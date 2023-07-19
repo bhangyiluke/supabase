@@ -1,478 +1,416 @@
 [
   {
     "name": "address_standardizer",
-    "schema": null,
-    "default_version": "3.1.1",
-    "installed_version": null,
-    "comment": "Used to parse an address into constituent elements. Generally used to support geocoding address normalization step."
-  },
-  {
-    "name": "address_standardizer-3",
-    "schema": null,
-    "default_version": "3.1.1",
-    "installed_version": null,
-    "comment": "Used to parse an address into constituent elements. Generally used to support geocoding address normalization step."
+    "comment": "Used to parse an address into constituent elements. Generally used to support geocoding address normalization step.",
+    "tags": ["Utility"],
+    "link": "https://postgis.net/docs/manual-2.5/Address_Standardizer.html"
   },
   {
     "name": "address_standardizer_data_us",
-    "schema": null,
-    "default_version": "3.1.1",
-    "installed_version": null,
-    "comment": "Address Standardizer US dataset example"
-  },
-  {
-    "name": "address_standardizer_data_us-3",
-    "schema": null,
-    "default_version": "3.1.1",
-    "installed_version": null,
-    "comment": "Address Standardizer US dataset example"
-  },
-  {
-    "name": "adminpack",
-    "schema": null,
-    "default_version": "2.0",
-    "installed_version": null,
-    "comment": "administrative functions for PostgreSQL"
+    "comment": "Address Standardizer US dataset example",
+    "tags": ["Dataset"],
+    "link": "https://postgis.net/docs/manual-2.5/Address_Standardizer.html"
   },
   {
     "name": "amcheck",
-    "schema": null,
-    "default_version": "1.2",
-    "installed_version": null,
-    "comment": "functions for verifying relation integrity"
+    "comment": "functions for verifying relation integrity",
+    "tags": ["Admin", "Utility"],
+    "link": "https://www.postgresql.org/docs/current/amcheck.html"
   },
   {
     "name": "autoinc",
-    "schema": null,
-    "default_version": "1.0",
-    "installed_version": null,
-    "comment": "functions for autoincrementing fields"
+    "comment": "functions for autoincrementing fields",
+    "tags": ["Utility"],
+    "link": "https://www.postgresql.org/docs/current/contrib-spi.html#id-1.11.7.50.6"
   },
   {
     "name": "bloom",
-    "schema": null,
-    "default_version": "1.0",
-    "installed_version": null,
-    "comment": "bloom access method - signature file based index"
+    "comment": "bloom access method - signature file based index",
+    "tags": ["Index"],
+    "link": "https://www.postgresql.org/docs/current/bloom.html"
   },
   {
     "name": "btree_gin",
-    "schema": null,
-    "default_version": "1.3",
-    "installed_version": null,
-    "comment": "support for indexing common datatypes in GIN"
+    "comment": "support for indexing common datatypes in GIN",
+    "tags": ["Index"],
+    "link": "https://www.postgresql.org/docs/current/btree-gin.html"
   },
   {
     "name": "btree_gist",
-    "schema": null,
-    "default_version": "1.5",
-    "installed_version": null,
-    "comment": "support for indexing common datatypes in GiST"
+    "comment": "support for indexing common datatypes in GiST",
+    "tags": ["Index"],
+    "link": "https://www.postgresql.org/docs/current/btree-gist.html"
   },
   {
     "name": "citext",
-    "schema": null,
-    "default_version": "1.6",
-    "installed_version": null,
-    "comment": "data type for case-insensitive character strings"
+    "comment": "data type for case-insensitive character strings",
+    "tags": ["Data Type"],
+    "link": "https://www.postgresql.org/docs/current/citext.html"
   },
   {
     "name": "cube",
-    "schema": null,
-    "default_version": "1.4",
-    "installed_version": null,
-    "comment": "data type for multidimensional cubes"
+    "comment": "data type for multidimensional cubes",
+    "tags": ["Data Type"],
+    "link": "https://www.postgresql.org/docs/current/cube.html"
   },
   {
     "name": "dblink",
-    "schema": null,
-    "default_version": "1.2",
-    "installed_version": null,
-    "comment": "connect to other PostgreSQL databases from within a database"
+    "comment": "connect to other PostgreSQL databases from within a database",
+    "tags": ["Admin", "Utility"],
+    "link": "https://www.postgresql.org/docs/current/contrib-dblink-function.html"
   },
   {
     "name": "dict_int",
-    "schema": null,
-    "default_version": "1.0",
-    "installed_version": null,
-    "comment": "text search dictionary template for integers"
+    "comment": "text search dictionary template for integers",
+    "tags": ["Search"],
+    "link": "https://www.postgresql.org/docs/current/dict-int.html"
   },
   {
     "name": "dict_xsyn",
-    "schema": null,
-    "default_version": "1.0",
-    "installed_version": null,
-    "comment": "text search dictionary template for extended synonym processing"
+    "comment": "text search dictionary template for extended synonym processing",
+    "tags": ["Search"],
+    "link": "https://www.postgresql.org/docs/current/dict-xsyn.html"
   },
   {
     "name": "earthdistance",
-    "schema": null,
-    "default_version": "1.1",
-    "installed_version": null,
-    "comment": "calculate great-circle distances on the surface of the Earth"
-  },
-  {
-    "name": "file_fdw",
-    "schema": null,
-    "default_version": "1.0",
-    "installed_version": null,
-    "comment": "foreign-data wrapper for flat file access"
+    "comment": "calculate great-circle distances on the surface of the Earth",
+    "tags": ["Geo", "Utility"],
+    "link": "https://www.postgresql.org/docs/current/earthdistance.html"
   },
   {
     "name": "fuzzystrmatch",
-    "schema": null,
-    "default_version": "1.1",
-    "installed_version": null,
-    "comment": "determine similarities and distance between strings"
+    "comment": "determine similarities and distance between strings",
+    "tags": ["Search"],
+    "link": "https://www.postgresql.org/docs/current/fuzzystrmatch.html"
   },
   {
     "name": "hstore",
-    "schema": null,
-    "default_version": "1.6",
-    "installed_version": null,
-    "comment": "data type for storing sets of (key, value) pairs"
+    "comment": "data type for storing sets of (key, value) pairs",
+    "tags": ["Data Type"],
+    "link": "https://www.postgresql.org/docs/current/hstore.html"
+  },
+  {
+    "name": "hypopg",
+    "comment": "Hypothetical indexes for PostgreSQL",
+    "tags": ["Admin", "Index"],
+    "link": "/guides/database/extensions/hypopg"
   },
   {
     "name": "http",
-    "schema": "extensions",
-    "default_version": "1.3",
-    "installed_version": "1.3",
-    "comment": "HTTP client for PostgreSQL, allows web page retrieval inside the database."
+    "comment": "HTTP client for PostgreSQL, allows web page retrieval inside the database.",
+    "tags": ["Utility"],
+    "link": "/guides/database/extensions/http"
   },
   {
     "name": "insert_username",
-    "schema": null,
-    "default_version": "1.0",
-    "installed_version": null,
-    "comment": "functions for tracking who changed a table"
+    "comment": "functions for tracking who changed a table",
+    "tags": ["Audit", "Utility"],
+    "link": "https://www.postgresql.org/docs/current/contrib-spi.html#id-1.11.7.50.7"
   },
   {
-    "name": "intagg",
-    "schema": null,
-    "default_version": "1.1",
-    "installed_version": null,
-    "comment": "integer aggregator and enumerator (obsolete)"
+    "name": "old_snapshot",
+    "comment": "utilities in support of old_snapshot_threshold",
+    "tags": ["Admin", "Utility"],
+    "link": "https://www.postgresql.org/docs/current/oldsnapshot.html"
   },
   {
     "name": "intarray",
-    "schema": null,
-    "default_version": "1.2",
-    "installed_version": null,
-    "comment": "functions, operators, and index support for 1-D arrays of integers"
+    "comment": "functions, operators, and index support for 1-D arrays of integers",
+    "tags": ["Utility"],
+    "link": "https://www.postgresql.org/docs/current/intarray.html"
   },
   {
     "name": "isn",
-    "schema": null,
-    "default_version": "1.2",
-    "installed_version": null,
-    "comment": "data types for international product numbering standards"
+    "comment": "data types for international product numbering standards",
+    "tags": ["Data Type"],
+    "link": "https://www.postgresql.org/docs/current/isn.html"
   },
   {
     "name": "lo",
-    "schema": null,
-    "default_version": "1.1",
-    "installed_version": null,
-    "comment": "Large Object maintenance"
+    "comment": "Large Object maintenance",
+    "tags": ["Data Type"],
+    "link": "https://www.postgresql.org/docs/current/lo.html"
   },
   {
     "name": "ltree",
-    "schema": null,
-    "default_version": "1.1",
-    "installed_version": null,
-    "comment": "data type for hierarchical tree-like structures"
+    "comment": "data type for hierarchical tree-like structures",
+    "tags": ["Data Type"],
+    "link": "https://www.postgresql.org/docs/current/ltree.html"
   },
   {
     "name": "moddatetime",
-    "schema": null,
-    "default_version": "1.0",
-    "installed_version": null,
-    "comment": "functions for tracking last modification time"
-  },
-  {
-    "name": "pageinspect",
-    "schema": null,
-    "default_version": "1.7",
-    "installed_version": null,
-    "comment": "inspect the contents of database pages at a low level"
-  },
-  {
-    "name": "pg_buffercache",
-    "schema": null,
-    "default_version": "1.3",
-    "installed_version": null,
-    "comment": "examine the shared buffer cache"
+    "comment": "functions for tracking last modification time",
+    "tags": ["Audit", "Utility"],
+    "link": "https://www.postgresql.org/docs/current/contrib-spi.html#id-1.11.7.50.8"
   },
   {
     "name": "pg_cron",
-    "schema": "extensions",
-    "default_version": "1.3",
-    "installed_version": "1.3",
-    "comment": "Job scheduler for PostgreSQL"
+    "comment": "Job scheduler for PostgreSQL",
+    "tags": ["Utility"],
+    "link": "/guides/database/extensions/pg_cron"
   },
   {
     "name": "pg_freespacemap",
-    "schema": null,
-    "default_version": "1.2",
-    "installed_version": null,
-    "comment": "examine the free space map (FSM)"
+    "comment": "examine the free space map (FSM)",
+    "tags": ["Admin", "Utility"],
+    "link": "https://www.postgresql.org/docs/current/pgfreespacemap.html"
+  },
+  {
+    "name": "pg_graphql",
+    "comment": "pg_graphql: GraphQL support",
+    "tags": ["Utility"],
+    "link": "/guides/database/extensions/pg_graphql"
+  },
+  {
+    "name": "pg_hashids",
+    "comment": "pg_hashids",
+    "tags": ["Utility"],
+    "link": "/guides/database/extensions/pg_hashids"
+  },
+  {
+    "name": "pg_jsonschema",
+    "comment": "pg_jsonschema",
+    "tags": ["Utility"],
+    "link": "/guides/database/extensions/pg_jsonschema"
+  },
+  {
+    "name": "pg_net",
+    "comment": "Async HTTP",
+    "tags": ["Utility", "Notifications"],
+    "link": "/guides/database/extensions/pg_net"
   },
   {
     "name": "pg_prewarm",
-    "schema": null,
-    "default_version": "1.2",
-    "installed_version": null,
-    "comment": "prewarm relation data"
+    "comment": "prewarm relation data",
+    "tags": ["Admin", "Utility"],
+    "link": "https://www.postgresql.org/docs/current/pgprewarm.html"
+  },
+  {
+    "name": "pg_stat_monitor",
+    "comment": "The pg_stat_monitor is a PostgreSQL Query Performance Monitoring tool, based on PostgreSQL contrib module pg_stat_statements. pg_stat_monitor provides aggregated statistics, client information, plan details including plan, and histogram information.",
+    "tags": ["Utility"],
+    "link": "/guides/database/extensions/pg_stat_monitor"
   },
   {
     "name": "pg_stat_statements",
-    "schema": null,
-    "default_version": "1.7",
-    "installed_version": null,
-    "comment": "track execution statistics of all SQL statements executed"
+    "comment": "track execution statistics of all SQL statements executed",
+    "tags": ["Admin", "Utility"],
+    "link": "/guides/database/extensions/pg_stat_statements"
+  },
+  {
+    "name": "pg_surgery",
+    "comment": "extension to perform surgery on a damaged relation",
+    "tags": ["Admin", "Utility"],
+    "link": "https://www.postgresql.org/docs/current/pgsurgery.html"
   },
   {
     "name": "pg_trgm",
-    "schema": null,
-    "default_version": "1.4",
-    "installed_version": null,
-    "comment": "text similarity measurement and index searching based on trigrams"
-  },
-  {
-    "name": "pg_visibility",
-    "schema": null,
-    "default_version": "1.2",
-    "installed_version": null,
-    "comment": "examine the visibility map (VM) and page-level visibility info"
+    "comment": "text similarity measurement and index searching based on trigrams",
+    "tags": ["Search"],
+    "link": "https://www.postgresql.org/docs/current/pgtrgm.html"
   },
   {
     "name": "pgaudit",
-    "schema": null,
-    "default_version": "1.4",
-    "installed_version": null,
-    "comment": "provides auditing functionality"
+    "comment": "provides auditing functionality",
+    "tags": ["Audit", "Utility"],
+    "link": "/guides/database/extensions/pgaudit"
+  },
+  {
+    "name": "pg_walinspect",
+    "comment": "functions to inspect contents of PostgreSQL Write-Ahead Log",
+    "tags": ["Admin", "Utility"],
+    "link": "https://www.postgresql.org/docs/current/pgwalinspect.html"
   },
   {
     "name": "pgcrypto",
-    "schema": "extensions",
-    "default_version": "1.3",
-    "installed_version": "1.3",
-    "comment": "cryptographic functions"
+    "comment": "cryptographic functions",
+    "tags": ["Utility", "Cryptography"],
+    "link": "https://www.postgresql.org/docs/current/pgcrypto.html"
   },
   {
     "name": "pgjwt",
-    "schema": "extensions",
-    "default_version": "0.1.0",
-    "installed_version": "0.1.0",
-    "comment": "JSON Web Token API for Postgresql"
+    "comment": "JSON Web Token API for Postgresql",
+    "tags": ["Utility", "Cryptography"],
+    "link": "/guides/database/extensions/pgjwt"
+  },
+  {
+    "name": "pgroonga",
+    "comment": "Super fast and all languages supported full text search index based on Groonga",
+    "tags": ["Search"],
+    "link": "/guides/database/extensions/pgroonga"
+  },
+  {
+    "name": "pgroonga_database",
+    "comment": "PGroonga database management module",
+    "tags": ["Admin"],
+    "link": "https://pgroonga.github.io/reference/modules/pgroonga-database.html"
+  },
+  {
+    "name": "pgrouting",
+    "comment": "pgRouting Extension",
+    "tags": ["Geo", "Utility"],
+    "link": "/guides/database/extensions/pgrouting"
   },
   {
     "name": "pgrowlocks",
-    "schema": null,
-    "default_version": "1.2",
-    "installed_version": null,
-    "comment": "show row-level locking information"
+    "comment": "show row-level locking information",
+    "tags": ["Admin", "Utility"],
+    "link": "https://www.postgresql.org/docs/current/pgrowlocks.html"
+  },
+  {
+    "name": "pgsodium",
+    "comment": "Postgres extension for libsodium functions",
+    "tags": ["Utility", "Cryptography"],
+    "link": "/guides/database/extensions/pgsodium"
   },
   {
     "name": "pgstattuple",
-    "schema": null,
-    "default_version": "1.5",
-    "installed_version": null,
-    "comment": "show tuple-level statistics"
+    "comment": "show tuple-level statistics",
+    "tags": ["Admin", "Utility"],
+    "link": "https://www.postgresql.org/docs/current/pgstattuple.html"
   },
   {
     "name": "pgtap",
-    "schema": null,
-    "default_version": "1.1.0",
-    "installed_version": null,
-    "comment": "Unit testing for PostgreSQL"
+    "comment": "Unit testing for PostgreSQL",
+    "tags": ["Utility", "Testing"],
+    "link": "/guides/database/extensions/pgtap"
   },
   {
     "name": "plcoffee",
-    "schema": null,
-    "default_version": "3.0alpha",
-    "installed_version": null,
-    "comment": "PL/CoffeeScript (v8) trusted procedural language"
+    "comment": "PL/CoffeeScript (v8) trusted procedural language",
+    "tags": ["Language"],
+    "link": "https://github.com/plv8/plv8/blob/master/doc/plv8.md#coffeescript-extension"
   },
   {
     "name": "pljava",
-    "schema": null,
-    "default_version": "1.6.0",
-    "installed_version": null,
-    "comment": "PL/Java procedural language (https://tada.github.io/pljava/)"
+    "comment": "PL/Java procedural language (https://tada.github.io/pljava/)",
+    "tags": ["Language"],
+    "link": "https://tada.github.io/pljava/"
   },
   {
     "name": "plls",
-    "schema": null,
-    "default_version": "3.0alpha",
-    "installed_version": null,
-    "comment": "PL/LiveScript (v8) trusted procedural language"
+    "comment": "PL/LiveScript (v8) trusted procedural language",
+    "tags": ["Language"],
+    "link": "https://github.com/plv8/plv8/blob/master/doc/plv8.md#livescript-extension"
   },
   {
     "name": "plpgsql",
-    "schema": "pg_catalog",
-    "default_version": "1.0",
-    "installed_version": "1.0",
-    "comment": "PL/pgSQL procedural language"
+    "comment": "PL/pgSQL procedural language",
+    "tags": ["Language"],
+    "link": "https://www.postgresql.org/docs/current/plpgsql.html"
   },
   {
     "name": "plpgsql_check",
-    "schema": null,
-    "default_version": "1.11",
-    "installed_version": null,
-    "comment": "extended check for plpgsql functions"
+    "comment": "extended check for plpgsql functions",
+    "tags": ["Utility", "Testing"],
+    "link": "/guides/database/extensions/plpgsql_check"
   },
   {
     "name": "plv8",
-    "schema": null,
-    "default_version": "3.0alpha",
-    "installed_version": null,
-    "comment": "PL/JavaScript (v8) trusted procedural language"
+    "comment": "PL/JavaScript (v8) trusted procedural language",
+    "tags": ["Language"],
+    "link": "/guides/database/extensions/plv8"
   },
   {
     "name": "postgis",
-    "schema": null,
-    "default_version": "3.1.1",
-    "installed_version": null,
-    "comment": "PostGIS geometry and geography spatial types and functions"
-  },
-  {
-    "name": "postgis-3",
-    "schema": null,
-    "default_version": "3.1.1",
-    "installed_version": null,
-    "comment": "PostGIS geometry and geography spatial types and functions"
-  },
-  {
-    "name": "postgis_raster",
-    "schema": null,
-    "default_version": "3.1.1",
-    "installed_version": null,
-    "comment": "PostGIS raster types and functions"
-  },
-  {
-    "name": "postgis_raster-3",
-    "schema": null,
-    "default_version": "3.1.1",
-    "installed_version": null,
-    "comment": "PostGIS raster types and functions"
-  },
-  {
-    "name": "postgis_sfcgal",
-    "schema": null,
-    "default_version": "3.1.1",
-    "installed_version": null,
-    "comment": "PostGIS SFCGAL functions"
-  },
-  {
-    "name": "postgis_sfcgal-3",
-    "schema": null,
-    "default_version": "3.1.1",
-    "installed_version": null,
-    "comment": "PostGIS SFCGAL functions"
-  },
-  {
-    "name": "postgis_tiger_geocoder",
-    "schema": null,
-    "default_version": "3.1.1",
-    "installed_version": null,
-    "comment": "PostGIS tiger geocoder and reverse geocoder"
-  },
-  {
-    "name": "postgis_tiger_geocoder-3",
-    "schema": null,
-    "default_version": "3.1.1",
-    "installed_version": null,
-    "comment": "PostGIS tiger geocoder and reverse geocoder"
-  },
-  {
-    "name": "postgis_topology",
-    "schema": null,
-    "default_version": "3.1.1",
-    "installed_version": null,
-    "comment": "PostGIS topology spatial types and functions"
-  },
-  {
-    "name": "postgis_topology-3",
-    "schema": null,
-    "default_version": "3.1.1",
-    "installed_version": null,
-    "comment": "PostGIS topology spatial types and functions"
+    "comment": "PostGIS geometry and geography spatial types and functions",
+    "tags": ["Geo"],
+    "link": "/guides/database/extensions/postgis"
   },
   {
     "name": "postgres_fdw",
-    "schema": null,
-    "default_version": "1.0",
-    "installed_version": null,
-    "comment": "foreign-data wrapper for remote PostgreSQL servers"
+    "comment": "foreign-data wrapper for remote PostgreSQL servers",
+    "tags": ["Admin"],
+    "link": "https://www.postgresql.org/docs/current/postgres-fdw.html"
   },
   {
     "name": "refint",
-    "schema": null,
-    "default_version": "1.0",
-    "installed_version": null,
-    "comment": "functions for implementing referential integrity (obsolete)"
+    "comment": "functions for implementing referential integrity (obsolete)",
+    "tags": ["Utility"],
+    "link": "https://www.postgresql.org/docs/current/contrib-spi.html#id-1.11.7.50.5"
+  },
+  {
+    "name": "rum",
+    "comment": "GIN-like index for text search",
+    "tags": ["Index", "Search"],
+    "link": "/guides/database/extensions/rum"
   },
   {
     "name": "seg",
-    "schema": null,
-    "default_version": "1.3",
-    "installed_version": null,
-    "comment": "data type for representing line segments or floating-point intervals"
+    "comment": "data type for representing line segments or floating-point intervals",
+    "tags": ["Utility"],
+    "link": "https://www.postgresql.org/docs/current/seg.html"
   },
   {
     "name": "sslinfo",
-    "schema": null,
-    "default_version": "1.2",
-    "installed_version": null,
-    "comment": "information about SSL certificates"
+    "comment": "information about SSL certificates",
+    "tags": ["Admin", "Utility"],
+    "link": "https://www.postgresql.org/docs/current/sslinfo.html"
+  },
+  {
+    "name": "supautils",
+    "comment": "Supabase standard library",
+    "tags": ["Utility"],
+    "link": "https://supabase.github.io/supautils/"
   },
   {
     "name": "tablefunc",
-    "schema": null,
-    "default_version": "1.0",
-    "installed_version": null,
-    "comment": "functions that manipulate whole tables, including crosstab"
+    "comment": "functions that manipulate whole tables, including crosstab",
+    "tags": ["Utility"],
+    "link": "https://www.postgresql.org/docs/current/tablefunc.html"
   },
   {
     "name": "tcn",
-    "schema": null,
-    "default_version": "1.0",
-    "installed_version": null,
-    "comment": "Triggered change notifications"
+    "comment": "Triggered change notifications",
+    "tags": ["Utility", "Notifications"],
+    "link": "https://www.postgresql.org/docs/current/tcn.html"
+  },
+  {
+    "name": "timescaledb",
+    "comment": "Enables scalable inserts and complex queries for time-series data",
+    "tags": ["Time Series", "Data Type", "Utility"],
+    "link": "/guides/database/extensions/timescaledb"
   },
   {
     "name": "tsm_system_rows",
-    "schema": null,
-    "default_version": "1.0",
-    "installed_version": null,
-    "comment": "TABLESAMPLE method which accepts number of rows as a limit"
+    "comment": "TABLESAMPLE method which accepts number of rows as a limit",
+    "tags": ["Utility"],
+    "link": "https://www.postgresql.org/docs/current/tsm-system-rows.html"
   },
   {
     "name": "tsm_system_time",
-    "schema": null,
-    "default_version": "1.0",
-    "installed_version": null,
-    "comment": "TABLESAMPLE method which accepts time in milliseconds as a limit"
+    "comment": "TABLESAMPLE method which accepts time in milliseconds as a limit",
+    "tags": ["Utility"],
+    "link": "https://www.postgresql.org/docs/current/tsm-system-time.html"
   },
   {
     "name": "unaccent",
-    "schema": null,
-    "default_version": "1.1",
-    "installed_version": null,
-    "comment": "text search dictionary that removes accents"
+    "comment": "text search dictionary that removes accents",
+    "tags": ["Search"],
+    "link": "https://www.postgresql.org/docs/current/unaccent.html"
   },
   {
     "name": "uuid-ossp",
-    "schema": "extensions",
-    "default_version": "1.1",
-    "installed_version": "1.1",
-    "comment": "generate universally unique identifiers (UUIDs)"
+    "comment": "generate universally unique identifiers (UUIDs)",
+    "tags": ["Utility", "Data Type"],
+    "link": "/guides/database/extensions/uuid-ossp"
   },
   {
-    "name": "xml2",
-    "schema": null,
-    "default_version": "1.1",
-    "installed_version": null,
-    "comment": "XPath querying and XSLT"
+    "name": "pgvector",
+    "comment": "vector data type with similarity search",
+    "tags": ["AI", "Data Type", "Search"],
+    "link": "/guides/database/extensions/pgvector"
+  },
+  {
+    "name": "pg_repack",
+    "comment": "Optimize physical storage and remove bloat from tables and indexes",
+    "tags": ["Admin", "Utility"],
+    "link": "/guides/database/extensions/pg_repack"
+  },
+  {
+    "name": "wrappers",
+    "comment": "Foreign data wrappers developed by Supabase",
+    "tags": ["Admin", "Utility"],
+    "link": "/guides/database/extensions/wrappers"
   }
 ]

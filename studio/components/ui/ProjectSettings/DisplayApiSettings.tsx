@@ -1,34 +1,37 @@
-import { useRouter } from 'next/router'
-import { IconAlertCircle, IconLoader, Input } from 'ui'
-import { JwtSecretUpdateStatus } from '@supabase/shared-types/out/events'
 import { PermissionAction } from '@supabase/shared-types/out/constants'
+import { JwtSecretUpdateStatus } from '@supabase/shared-types/out/events'
+import { Button, IconAlertCircle, IconBookOpen, IconLoader, Input } from 'ui'
 
-import { checkPermissions, useJwtSecretUpdateStatus, useProjectSettings } from 'hooks'
-import { DEFAULT_PROJECT_API_SERVICE_ID } from 'lib/constants'
+import { useParams } from 'common/hooks'
 import Panel from 'components/ui/Panel'
+import { useJwtSecretUpdatingStatusQuery } from 'data/config/jwt-secret-updating-status-query'
+import { useProjectSettingsQuery } from 'data/config/project-settings-query'
+import { useCheckPermissions } from 'hooks'
+import { DEFAULT_PROJECT_API_SERVICE_ID } from 'lib/constants'
 
 const DisplayApiSettings = () => {
-  const router = useRouter()
-  const { ref } = router.query
+  const { ref: projectRef } = useParams()
 
   const {
-    services,
-    error: projectSettingsError,
+    data: settings,
     isError: isProjectSettingsError,
     isLoading: isProjectSettingsLoading,
-  } = useProjectSettings(ref as string | undefined)
+  } = useProjectSettingsQuery({ projectRef })
   const {
-    jwtSecretUpdateStatus,
+    data,
     isError: isJwtSecretUpdateStatusError,
     isLoading: isJwtSecretUpdateStatusLoading,
-  }: any = useJwtSecretUpdateStatus(ref)
+  } = useJwtSecretUpdatingStatusQuery({ projectRef })
+  const jwtSecretUpdateStatus = data?.jwtSecretUpdateStatus
 
-  const canReadAPIKeys = checkPermissions(PermissionAction.READ, 'service_api_keys')
+  const canReadAPIKeys = useCheckPermissions(PermissionAction.READ, 'service_api_keys')
 
   const isNotUpdatingJwtSecret =
     jwtSecretUpdateStatus === undefined || jwtSecretUpdateStatus === JwtSecretUpdateStatus.Updated
   // Get the API service
-  const apiService = (services ?? []).find((x: any) => x.app.id == DEFAULT_PROJECT_API_SERVICE_ID)
+  const apiService = (settings?.services ?? []).find(
+    (x: any) => x.app.id == DEFAULT_PROJECT_API_SERVICE_ID
+  )
   const apiKeys = apiService?.service_api_keys ?? []
   // api keys should not be empty. However it can be populated with a delay on project creation
   const isApiKeysEmpty = apiKeys.length === 0
@@ -41,20 +44,26 @@ const DisplayApiSettings = () => {
           <p className="text-sm text-scale-1000">
             Your API is secured behind an API gateway which requires an API Key for every request.
             <br />
-            You can use the keys below to use Supabase client libraries.
+            You can use the keys below in the Supabase client libraries.
+            <br />
+            <a href="https://supabase.com/docs#client-libraries" target="_blank" rel="noreferrer">
+              <Button icon={<IconBookOpen />} type="default" className="mt-4">
+                Client Docs
+              </Button>
+            </a>
           </p>
         </div>
       }
     >
       {isProjectSettingsError || isJwtSecretUpdateStatusError ? (
-        <div className="flex items-center justify-center space-x-2 py-8">
+        <div className="flex items-center justify-center py-8 space-x-2">
           <IconAlertCircle size={16} strokeWidth={1.5} />
           <p className="text-sm text-scale-1100">
             {isProjectSettingsError ? 'Failed to retrieve API keys' : 'Failed to update JWT secret'}
           </p>
         </div>
       ) : isApiKeysEmpty || isProjectSettingsLoading || isJwtSecretUpdateStatusLoading ? (
-        <div className="flex items-center justify-center space-x-2 py-8">
+        <div className="flex items-center justify-center py-8 space-x-2">
           <IconLoader className="animate-spin" size={16} strokeWidth={1.5} />
           <p className="text-sm text-scale-1100">
             {isProjectSettingsLoading || isApiKeysEmpty
@@ -86,10 +95,10 @@ const DisplayApiSettings = () => {
                   ))}
                   {x.tags === 'service_role' && (
                     <>
-                      <code className="bg-red-900 text-xs text-white">{'secret'}</code>
+                      <code className="bg-red-900 text-xs text-white">secret</code>
                     </>
                   )}
-                  {x.tags === 'anon' && <code className="text-xs text-code">{'public'}</code>}
+                  {x.tags === 'anon' && <code className="text-xs text-code">public</code>}
                 </>
               }
               copy={canReadAPIKeys && isNotUpdatingJwtSecret}

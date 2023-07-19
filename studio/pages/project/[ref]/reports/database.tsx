@@ -1,29 +1,29 @@
 import dayjs from 'dayjs'
-import { useRouter } from 'next/router'
 import { observer } from 'mobx-react-lite'
-import { FC, useEffect, useState } from 'react'
-import { IconArrowRight } from 'ui'
+import { useEffect, useState } from 'react'
 
-import { useStore, useProjectUsage } from 'hooks'
-import { formatBytes } from 'lib/helpers'
+import { useParams } from 'common/hooks'
+import { useStore } from 'hooks'
 import { TIME_PERIODS_INFRA, USAGE_APPROACHING_THRESHOLD } from 'lib/constants'
+import { formatBytes } from 'lib/helpers'
 import { NextPageWithLayout } from 'types'
+import { Badge, Button, IconArrowRight, IconExternalLink } from 'ui'
 
-import ReportsLayout from 'components/layouts/ReportsLayout/ReportsLayout'
+import { ReportsLayout } from 'components/layouts'
+import { useProjectContext } from 'components/layouts/ProjectLayout/ProjectContext'
 import ChartHandler from 'components/to-be-cleaned/Charts/ChartHandler'
 import DateRangePicker from 'components/to-be-cleaned/DateRangePicker'
 import Panel from 'components/ui/Panel'
 import SparkBar from 'components/ui/SparkBar'
+import { useProjectUsageQuery } from 'data/usage/project-usage-query'
+import { useProjectSubscriptionV2Query } from 'data/subscriptions/project-subscription-v2-query'
 
 const DatabaseReport: NextPageWithLayout = () => {
-  const { ui } = useStore()
-  const project = ui.selectedProject
-
   return (
     <div className="1xl:px-28 mx-auto flex flex-col gap-4 px-5 py-6 lg:px-16 xl:px-24 2xl:px-32">
       <div className="content h-full w-full overflow-y-auto">
         <div className="w-full">
-          <DatabaseUsage project={project} />
+          <DatabaseUsage />
         </div>
       </div>
     </div>
@@ -32,16 +32,17 @@ const DatabaseReport: NextPageWithLayout = () => {
 
 DatabaseReport.getLayout = (page) => <ReportsLayout title="Database">{page}</ReportsLayout>
 
-export default observer(DatabaseReport)
+export default DatabaseReport
 
-const DatabaseUsage: FC<any> = () => {
-  const router = useRouter()
+const DatabaseUsage = observer(() => {
   const { meta, ui } = useStore()
+  const { project } = useProjectContext()
   const [databaseSize, setDatabaseSize] = useState<any>(0)
   const [dateRange, setDateRange] = useState<any>(undefined)
 
-  const { ref } = router.query
-  const { usage } = useProjectUsage(ref as string)
+  const { ref: projectRef } = useParams()
+  const { data: usage } = useProjectUsageQuery({ projectRef })
+  const { data: subscription } = useProjectSubscriptionV2Query({ projectRef })
 
   const databaseSizeLimit = usage?.db_size?.limit ?? 0
   const databaseEgressLimit = usage?.db_egress?.limit ?? 0
@@ -72,6 +73,10 @@ const DatabaseUsage: FC<any> = () => {
   const egressIsApproaching = databaseSizeUsageRatio >= USAGE_APPROACHING_THRESHOLD
   const egressIsExceeded = databaseSizeUsageRatio >= 1
 
+  const subscriptionPlan = subscription?.plan?.id
+
+  const isPaidTier = subscriptionPlan !== 'free'
+
   return (
     <>
       <div>
@@ -95,6 +100,27 @@ const DatabaseUsage: FC<any> = () => {
                   labelTop={databaseSizeLimit > 0 ? formatBytes(databaseSizeLimit) : ''}
                 />
               </div>
+
+              {isPaidTier && (
+                <div className="flex justify-between items-center mt-3">
+                  <div className="flex flex-row space-x-3 text-scale-1000 text-sm">
+                    {usage?.disk_volume_size_gb && (
+                      <span>Disk Size: {usage.disk_volume_size_gb} GB</span>
+                    )}
+                    <Badge>Auto-Scaling</Badge>
+                  </div>
+
+                  <Button type="default" icon={<IconExternalLink size={14} strokeWidth={1.5} />}>
+                    <a
+                      target="_blank"
+                      rel="noreferrer"
+                      href="https://supabase.com/docs/guides/platform/database-usage"
+                    >
+                      What is disk size?
+                    </a>
+                  </Button>
+                </div>
+              )}
             </Panel.Content>
             <Panel.Content>
               <div className="space-y-1">
@@ -122,7 +148,7 @@ const DatabaseUsage: FC<any> = () => {
               <div className="mb-4 flex items-center space-x-3">
                 <DateRangePicker
                   loading={false}
-                  value={'3h'}
+                  value={'7d'}
                   options={TIME_PERIODS_INFRA}
                   currentBillingPeriodStart={undefined}
                   onChange={setDateRange}
@@ -157,8 +183,8 @@ const DatabaseUsage: FC<any> = () => {
                   <ChartHandler
                     startDate={dateRange?.period_start?.date}
                     endDate={dateRange?.period_end?.date}
-                    attribute={'cpu_usage'}
-                    label={'CPU usage'}
+                    attribute={'swap_usage'}
+                    label={'Swap usage'}
                     interval={dateRange.interval}
                     provider={'infra-monitoring'}
                   />
@@ -168,8 +194,30 @@ const DatabaseUsage: FC<any> = () => {
                   <ChartHandler
                     startDate={dateRange?.period_start?.date}
                     endDate={dateRange?.period_end?.date}
-                    attribute={'disk_io_budget'}
-                    label={'Daily Disk IO Budget remaining'}
+                    attribute={'avg_cpu_usage'}
+                    label={'Average CPU usage'}
+                    interval={dateRange.interval}
+                    provider={'infra-monitoring'}
+                  />
+                )}
+
+                {dateRange && (
+                  <ChartHandler
+                    startDate={dateRange?.period_start?.date}
+                    endDate={dateRange?.period_end?.date}
+                    attribute={'max_cpu_usage'}
+                    label={'Max CPU usage'}
+                    interval={dateRange.interval}
+                    provider={'infra-monitoring'}
+                  />
+                )}
+
+                {dateRange && (
+                  <ChartHandler
+                    startDate={dateRange?.period_start?.date}
+                    endDate={dateRange?.period_end?.date}
+                    attribute={'disk_io_consumption'}
+                    label={'Disk IO consumed'}
                     interval={dateRange.interval}
                     provider={'infra-monitoring'}
                   />
@@ -181,4 +229,4 @@ const DatabaseUsage: FC<any> = () => {
       </div>
     </>
   )
-}
+})

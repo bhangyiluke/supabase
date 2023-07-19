@@ -1,40 +1,47 @@
 import { useMutation, UseMutationOptions, useQueryClient } from '@tanstack/react-query'
-import { AvailableColumn, Wrapper } from 'components/interfaces/Database/Wrappers/Wrappers.types'
+import { toast } from 'react-hot-toast'
+
+import {
+  AvailableColumn,
+  WrapperMeta,
+} from 'components/interfaces/Database/Wrappers/Wrappers.types'
 import { executeSql } from 'data/sql/execute-sql-query'
 import { sqlKeys } from 'data/sql/keys'
+import { wrapWithTransaction } from 'data/sql/utils/transaction'
 import { useStore } from 'hooks'
+import { ResponseError } from 'types'
 
 export type FDWCreateVariables = {
   projectRef?: string
   connectionString?: string
-  wrapper: Wrapper
+  wrapperMeta: WrapperMeta
   formState: {
     [k: string]: string
   }
-  newTables: any[]
+  tables: any[]
 }
 
-export function getFDWCreateSql({
-  wrapper,
+export function getCreateFDWSql({
+  wrapperMeta,
   formState,
-  newTables,
-}: Pick<FDWCreateVariables, 'wrapper' | 'formState' | 'newTables'>) {
-  const newSchemasSql = newTables
+  tables,
+}: Pick<FDWCreateVariables, 'wrapperMeta' | 'formState' | 'tables'>) {
+  const newSchemasSql = tables
     .filter((table) => table.is_new_schema)
     .map((table) => /* SQL */ `create schema if not exists ${table.schema_name};`)
     .join('\n')
 
   const createWrapperSql = /* SQL */ `
-    create foreign data wrapper ${wrapper.name}
-    handler ${wrapper.handlerName}
-    validator ${wrapper.validatorName};
+    create foreign data wrapper ${formState.wrapper_name}
+    handler ${wrapperMeta.handlerName}
+    validator ${wrapperMeta.validatorName};
   `
 
-  const encryptedOptions = wrapper.server.options.filter((option) => option.encrypted)
-  const unencryptedOptions = wrapper.server.options.filter((option) => !option.encrypted)
+  const encryptedOptions = wrapperMeta.server.options.filter((option) => option.encrypted)
+  const unencryptedOptions = wrapperMeta.server.options.filter((option) => !option.encrypted)
 
   const createEncryptedKeysSqlArray = encryptedOptions.map((option) => {
-    const key = `${wrapper.name}_${option.name}`
+    const key = `${formState.wrapper_name}_${option.name}`
     // Escape single quotes in postgresql by doubling them up
     const value = (formState[option.name] || '').replace(/'/g, "''")
 
@@ -67,13 +74,13 @@ export function getFDWCreateSql({
       ${encryptedOptions
         .map(
           (option) =>
-            /* SQL */ `select id into v_${option.name} from pgsodium.valid_key where name = '${wrapper.name}_${option.name}' limit 1;`
+            /* SQL */ `select id into v_${option.name} from pgsodium.valid_key where name = '${formState.wrapper_name}_${option.name}' limit 1;`
         )
         .join('\n')}
     
       execute format(
-        E'create server ${wrapper.server.name}\\n'
-        '   foreign data wrapper ${wrapper.name}\\n'
+        E'create server ${formState.server_name}\\n'
+        '   foreign data wrapper ${formState.wrapper_name}\\n'
         '   options (\\n'
         '     ${optionsSqlArray}\\n'
         '   );',
@@ -82,19 +89,15 @@ export function getFDWCreateSql({
     end $$;
   `
 
-  const createTablesSql = newTables
+  const createTablesSql = tables
     .map((newTable) => {
-      const table = wrapper.tables[newTable.index]
-
       const columns: AvailableColumn[] = newTable.columns
-        .map((name: string) => table.availableColumns.find((c) => c.name === name))
-        .filter(Boolean)
 
       return /* SQL */ `
-        create foreign table ${newTable.schema_name}.${newTable.table_name} (
-          ${columns.map((column) => `${column.name} ${column.type}`).join(',\n          ')}
+        create foreign table "${newTable.schema_name}"."${newTable.table_name}" (
+          ${columns.map((column) => `"${column.name}" ${column.type}`).join(',\n          ')}
         )
-        server ${wrapper.server.name}
+        server ${formState.server_name}
         options (
           ${Object.entries(newTable)
             .filter(
@@ -112,8 +115,6 @@ export function getFDWCreateSql({
     .join('\n\n')
 
   const sql = /* SQL */ `
-    begin;
-
     ${newSchemasSql}
 
     ${createWrapperSql}
@@ -123,8 +124,6 @@ export function getFDWCreateSql({
     ${createServerSql}
 
     ${createTablesSql}
-
-    commit;
   `
 
   return sql
@@ -133,14 +132,12 @@ export function getFDWCreateSql({
 export async function createFDW({
   projectRef,
   connectionString,
-  wrapper,
+  wrapperMeta,
   formState,
-  newTables,
+  tables,
 }: FDWCreateVariables) {
-  const sql = getFDWCreateSql({ wrapper, formState, newTables })
-
+  const sql = wrapWithTransaction(getCreateFDWSql({ wrapperMeta, formState, tables }))
   const { result } = await executeSql({ projectRef, connectionString, sql })
-
   return result
 }
 
@@ -148,21 +145,34 @@ type FDWCreateData = Awaited<ReturnType<typeof createFDW>>
 
 export const useFDWCreateMutation = ({
   onSuccess,
+  onError,
   ...options
-}: Omit<UseMutationOptions<FDWCreateData, unknown, FDWCreateVariables>, 'mutationFn'> = {}) => {
+}: Omit<
+  UseMutationOptions<FDWCreateData, ResponseError, FDWCreateVariables>,
+  'mutationFn'
+> = {}) => {
   const queryClient = useQueryClient()
   const { vault } = useStore()
 
-  return useMutation<FDWCreateData, unknown, FDWCreateVariables>((vars) => createFDW(vars), {
+  return useMutation<FDWCreateData, ResponseError, FDWCreateVariables>((vars) => createFDW(vars), {
     async onSuccess(data, variables, context) {
       const { projectRef } = variables
 
       await Promise.all([
-        queryClient.invalidateQueries(sqlKeys.query(projectRef, ['fdws'])),
+        queryClient.invalidateQueries(sqlKeys.query(projectRef, ['fdws']), { refetchType: 'all' }),
         vault.load(),
       ])
 
       await onSuccess?.(data, variables, context)
+    },
+    async onError(data, variables, context) {
+      if (onError === undefined) {
+        toast.error(
+          `Failed to create ${variables.wrapperMeta.label} foreign data wrapper: ${data.message}`
+        )
+      } else {
+        onError(data, variables, context)
+      }
     },
     ...options,
   })

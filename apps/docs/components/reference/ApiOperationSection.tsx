@@ -1,5 +1,4 @@
-import { Tabs } from '~/../../packages/ui'
-import CodeBlock from '~/components/CodeBlock/CodeBlock'
+import { CodeBlock, Tabs } from 'ui'
 import Param from '~/components/Params'
 import RefSubLayout from '~/layouts/ref/RefSubLayout'
 
@@ -31,7 +30,7 @@ const ApiOperationSection = (props) => {
             >
               {operation.operation}
             </span>
-            {operation.fullPath}
+            {operation.path}
           </code>
         </div>
         <div className="prose dark:prose-dark py-4">

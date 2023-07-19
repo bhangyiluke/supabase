@@ -1,12 +1,14 @@
 import HCaptcha from '@hcaptcha/react-hcaptcha'
+import { useQueryClient } from '@tanstack/react-query'
 import { useStore } from 'hooks'
 import { usePushNext } from 'hooks/misc/useAutoAuthRedirect'
 import { auth } from 'lib/gotrue'
+import { incrementSignInClicks } from 'lib/local-storage'
 import Link from 'next/link'
 import { useRef, useState } from 'react'
-import { useSWRConfig } from 'swr'
 import { Button, Form, Input } from 'ui'
 import { object, string } from 'yup'
+import * as Sentry from '@sentry/nextjs'
 
 const signInSchema = object({
   email: string().email('Must be a valid email').required('Email is required'),
@@ -16,7 +18,7 @@ const signInSchema = object({
 const SignInForm = () => {
   const { ui } = useStore()
   const pushNext = usePushNext()
-  const { cache } = useSWRConfig()
+  const queryClient = useQueryClient()
 
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const captchaRef = useRef<HCaptcha>(null)
@@ -40,15 +42,18 @@ const SignInForm = () => {
     })
 
     if (!error) {
+      const signInClicks = incrementSignInClicks()
+      if (signInClicks > 1) {
+        Sentry.captureMessage('Sign in without previous sign out detected')
+      }
+
       ui.setNotification({
         id: toastId,
         category: 'success',
         message: `Signed in successfully!`,
       })
 
-      // .clear() does actually exist on the cache object, but it's not in the types 🤦🏻
-      // @ts-ignore
-      cache.clear()
+      await queryClient.resetQueries()
 
       await pushNext()
     } else {
@@ -105,7 +110,7 @@ const SignInForm = () => {
 
               {/* positioned using absolute instead of labelOptional prop so tabbing between inputs works smoothly */}
               <Link href="/forgot-password">
-                <a className="text-scale-900 text-sm absolute top-0 right-0">Forgot Password?</a>
+                <a className="absolute top-0 right-0 text-sm text-scale-900">Forgot Password?</a>
               </Link>
             </div>
 

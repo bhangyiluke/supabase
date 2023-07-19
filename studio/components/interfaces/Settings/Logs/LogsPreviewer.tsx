@@ -20,10 +20,10 @@ import PreviewFilterPanel from 'components/interfaces/Settings/Logs/PreviewFilte
 import { LOGS_TABLES } from './Logs.constants'
 import ShimmerLine from 'components/ui/ShimmerLine'
 import LoadingOpacity from 'components/ui/LoadingOpacity'
-import { useProjectSubscription } from 'hooks'
 import { useUpgradePrompt } from 'hooks/misc/useUpgradePrompt'
-import { StripeProduct } from 'components/interfaces/Billing'
 import UpgradePrompt from './UpgradePrompt'
+import { useParams } from 'common/hooks'
+import { useProjectSubscriptionV2Query } from 'data/subscriptions/project-subscription-v2-query'
 
 /**
  * Acts as a container component for the entire log display
@@ -50,17 +50,26 @@ export const LogsPreviewer: React.FC<Props> = ({
   tableName,
 }) => {
   const router = useRouter()
-  const { s, ite, its, ref } = router.query
+  const { s, ite, its } = useParams()
   const [showChart, setShowChart] = useState(true)
-  const { subscription } = useProjectSubscription(ref as string)
-  const tier = subscription?.tier
+  const { data: subscription } = useProjectSubscriptionV2Query({ projectRef })
 
   const table = !tableName ? LOGS_TABLES[queryType] : tableName
 
-  const [
-    { error, logData, params, newCount, filters, isLoading, eventChartData },
-    { loadOlder, setFilters, refresh, setParams },
-  ] = useLogsPreview(projectRef as string, table, filterOverride)
+  const {
+    error,
+    logData,
+    params,
+    newCount,
+    filters,
+    isLoading,
+    eventChartData,
+    isLoadingOlder,
+    loadOlder,
+    setFilters,
+    refresh,
+    setParams,
+  } = useLogsPreview(projectRef as string, table, filterOverride)
 
   const { showUpgradePrompt, setShowUpgradePrompt } = useUpgradePrompt(
     params.iso_timestamp_start as string
@@ -80,12 +89,12 @@ export const LogsPreviewer: React.FC<Props> = ({
   // Show the prompt on page load based on query params
   useEffect(() => {
     if (its) {
-      const shouldShowUpgradePrompt = maybeShowUpgradePrompt(its as string, tier?.key)
+      const shouldShowUpgradePrompt = maybeShowUpgradePrompt(its as string, subscription?.plan?.id)
       if (shouldShowUpgradePrompt) {
         setShowUpgradePrompt(!showUpgradePrompt)
       }
     }
-  }, [its, tier])
+  }, [its, subscription])
 
   const onSelectTemplate = (template: LogTemplate) => {
     setFilters((prev: any) => ({ ...prev, search_query: template.searchString }))
@@ -129,7 +138,7 @@ export const LogsPreviewer: React.FC<Props> = ({
         },
       })
     } else if (event === 'datepicker-change') {
-      const shouldShowUpgradePrompt = maybeShowUpgradePrompt(from, tier?.key)
+      const shouldShowUpgradePrompt = maybeShowUpgradePrompt(from, subscription?.plan?.id)
 
       if (shouldShowUpgradePrompt) {
         setShowUpgradePrompt(!showUpgradePrompt)
@@ -152,7 +161,7 @@ export const LogsPreviewer: React.FC<Props> = ({
   }
 
   return (
-    <div className="flex h-full flex-grow flex-col">
+    <div className="flex flex-col flex-grow h-full">
       <PreviewFilterPanel
         csvData={logData}
         isLoading={isLoading}
@@ -191,9 +200,9 @@ export const LogsPreviewer: React.FC<Props> = ({
         }
       >
         <div className={condensedLayout ? 'px-4' : ''}>
-          {showChart && (
+          {!isLoading && showChart && (
             <LogEventChart
-              data={!isLoading && eventChartData ? eventChartData : undefined}
+              data={eventChartData}
               onBarClick={(isoTimestamp) => {
                 handleSearch('event-chart-bar-click', {
                   query: filters.search_query as string,
@@ -205,7 +214,7 @@ export const LogsPreviewer: React.FC<Props> = ({
           )}
         </div>
       </div>
-      <div className="relative flex flex-grow flex-col pt-4">
+      <div className="relative flex flex-col flex-grow pt-4">
         <ShimmerLine active={isLoading} />
         <LoadingOpacity active={isLoading}>
           <LogTable
@@ -221,11 +230,20 @@ export const LogsPreviewer: React.FC<Props> = ({
         </LoadingOpacity>
         {!error && (
           <div className="flex flex-row justify-between p-2">
-            <Button onClick={loadOlder} icon={<IconRewind />} type="default">
+            <Button
+              onClick={loadOlder}
+              icon={<IconRewind />}
+              type="default"
+              loading={isLoadingOlder}
+              disabled={isLoadingOlder}
+            >
               Load older
             </Button>
-            <div className="mt-2 flex flex-row justify-end">
-              <UpgradePrompt show={showUpgradePrompt} setShowUpgradePrompt={setShowUpgradePrompt} />
+            <div className="flex flex-row justify-end mt-2">
+              <UpgradePrompt
+                show={showUpgradePrompt}
+                setShowUpgradePrompt={setShowUpgradePrompt}
+              />
             </div>
           </div>
         )}

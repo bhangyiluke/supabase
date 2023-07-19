@@ -1,11 +1,12 @@
 import { useMonaco } from '@monaco-editor/react'
 import { autorun } from 'mobx'
-import { createContext, FC, useContext, useEffect, useCallback } from 'react'
+import { createContext, FC, useContext, useEffect } from 'react'
 import toast from 'react-hot-toast'
 
 import { IRootStore } from 'stores'
 import { getTheme } from 'components/ui/CodeEditor'
 import SparkBar from 'components/ui/SparkBar'
+import { useTheme } from 'common'
 
 const StoreContext = createContext<IRootStore>(undefined!)
 
@@ -24,32 +25,19 @@ interface StoreProvider {
 export const StoreProvider: FC<StoreProvider> = ({ children, rootStore }) => {
   const monaco = useMonaco()
   const { ui } = rootStore
-  const { theme } = ui
+  const { isDarkMode } = useTheme()
 
   useEffect(() => {
     if (monaco) {
-      const theme: any = getTheme(ui.isDarkTheme)
+      const theme: any = getTheme(isDarkMode)
       monaco.editor.defineTheme('supabase', theme)
     }
-  }, [theme, monaco])
-
-  const matchMediaEvent = useCallback(() => {
-    ui.themeOption === 'system' &&
-      ui.setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-  }, [])
+  }, [isDarkMode, monaco])
 
   useEffect(() => {
-    ui.load()
-
-    if (window?.matchMedia('(prefers-color-scheme: dark)')?.addEventListener) {
-      // backwards compatibility for safari < v14
-      // limited support for addEventListener()
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', matchMediaEvent)
-    }
-
     autorun(() => {
       if (ui.notification) {
-        const { id, category, error, message, progress, duration } = ui.notification
+        const { id, category, error, message, description, progress, duration } = ui.notification
         const toastDuration = duration || 4000
         switch (category) {
           case 'info':
@@ -60,20 +48,20 @@ export const StoreProvider: FC<StoreProvider> = ({ children, rootStore }) => {
             console.error('Error:', { error, message })
             return toast.error(message, { id, duration: duration || Infinity })
           case 'loading':
-            if (progress) {
+            if (progress !== undefined) {
               return toast.loading(
-                <div
-                  className="flex flex-col space-y-1"
-                  style={{ minWidth: '200px', maxWidth: '267px' }}
-                >
+                <div className="flex flex-col space-y-2" style={{ minWidth: '220px' }}>
                   <SparkBar
                     value={progress}
                     max={100}
                     type="horizontal"
-                    barClass="bg-green-500"
+                    barClass="bg-brand-900"
                     labelBottom={message}
                     labelTop={`${progress.toFixed(2)}%`}
                   />
+                  {description !== undefined && (
+                    <p className="text-xs text-scale-1100">{description}</p>
+                  )}
                 </div>,
                 { id }
               )
@@ -83,10 +71,6 @@ export const StoreProvider: FC<StoreProvider> = ({ children, rootStore }) => {
         }
       }
     })
-    return () =>
-      window
-        .matchMedia('(prefers-color-scheme: dark)')
-        .removeEventListener('change', matchMediaEvent)
   }, [])
 
   return <StoreContext.Provider value={rootStore}>{children}</StoreContext.Provider>

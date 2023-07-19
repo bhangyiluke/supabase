@@ -1,31 +1,40 @@
-import Link from 'next/link'
-import { useState, useEffect, useRef, FC } from 'react'
-import { useRouter } from 'next/router'
-import * as Tooltip from '@radix-ui/react-tooltip'
 import { toPng } from 'html-to-image'
-import { Button, Input, Popover, IconCamera, IconX } from 'ui'
+import Link from 'next/link'
+import { useRouter } from 'next/router'
+import { ChangeEvent, FC, useEffect, useRef, useState } from 'react'
+import { Button, Dropdown, IconCamera, IconImage, IconUpload, IconX, Input, Popover } from 'ui'
 
+import { useParams } from 'common'
+import { useSendFeedbackMutation } from 'data/feedback/feedback-send'
 import { useStore } from 'hooks'
-import { post } from 'lib/common/fetch'
-import { API_URL } from 'lib/constants'
+import { timeout } from 'lib/helpers'
 import { convertB64toBlob, uploadAttachment } from './FeedbackDropdown.utils'
 
 interface Props {
   onClose: () => void
+  feedback: string
+  setFeedback: (value: string) => void
+  screenshot: string | undefined
+  setScreenshot: (value: string | undefined) => void
 }
 
-const FeedbackWidget: FC<Props> = ({ onClose }) => {
+const FeedbackWidget: FC<Props> = ({
+  onClose,
+  feedback,
+  setFeedback,
+  screenshot,
+  setScreenshot,
+}) => {
   const router = useRouter()
-  const { ref } = router.query
+  const { ref } = useParams()
 
   const { ui } = useStore()
   const inputRef = useRef<any>(null)
-
-  const [feedback, setFeedback] = useState('')
-  const [screenshot, setScreenshot] = useState<string>()
+  const uploadButtonRef = useRef()
 
   const [isSending, setSending] = useState(false)
   const [isSavingScreenshot, setIsSavingScreenshot] = useState(false)
+  const { mutateAsync: submitFeedback } = useSendFeedbackMutation()
 
   useEffect(() => {
     inputRef?.current?.focus()
@@ -35,7 +44,7 @@ const FeedbackWidget: FC<Props> = ({ onClose }) => {
     setFeedback(e.target.value)
   }
 
-  const captureScreenshot = () => {
+  const captureScreenshot = async () => {
     setIsSavingScreenshot(true)
 
     function filter(node: HTMLElement) {
@@ -45,6 +54,8 @@ const FeedbackWidget: FC<Props> = ({ onClose }) => {
       return true
     }
 
+    // Give time for dropdown to close
+    await timeout(100)
     toPng(document.body, { filter })
       .then((dataUrl: any) => setScreenshot(dataUrl))
       .catch((error: any) => {
@@ -60,6 +71,18 @@ const FeedbackWidget: FC<Props> = ({ onClose }) => {
       })
   }
 
+  const onFilesUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    event.persist()
+    const [file] = event.target.files || (event as any).dataTransfer.items
+
+    const reader = new FileReader()
+    reader.onload = function (event) {
+      setScreenshot(event.target?.result as string)
+    }
+    reader.readAsDataURL(file)
+    event.target.value = ''
+  }
+
   const sendFeedback = async () => {
     if (feedback.length === 0 && screenshot !== undefined) {
       return ui.setNotification({
@@ -67,30 +90,33 @@ const FeedbackWidget: FC<Props> = ({ onClose }) => {
         message: 'Please include a message in your feedback.',
         duration: 4000,
       })
-    } else if (feedback.length > 0) {
+    } else if (feedback.length > 0 && ref !== undefined) {
       setSending(true)
+
       const attachmentUrl = screenshot
         ? await uploadAttachment(ref as string, screenshot)
         : undefined
       const formattedFeedback =
         attachmentUrl !== undefined ? `${feedback}\n\nAttachments:\n${attachmentUrl}` : feedback
-      await post(`${API_URL}/feedback/send`, {
-        message: formattedFeedback,
-        pathname: router.asPath,
-        category: 'Feedback',
-        projectRef: ref,
-        tags: ['dashboard-feedback'],
-      })
-      setSending(false)
-      setFeedback('')
-      ui.setNotification({ category: 'success', message: 'Feedback sent. Thank you!' })
+
+      try {
+        await submitFeedback({
+          projectRef: ref,
+          message: formattedFeedback,
+          pathname: router.asPath,
+        })
+        setFeedback('')
+        ui.setNotification({ category: 'success', message: 'Feedback sent. Thank you!' })
+      } finally {
+        setSending(false)
+      }
     }
 
     return onClose()
   }
 
   return (
-    <div id="feedback-widget">
+    <div id="feedback-widget" className="text-area-text-sm">
       <Input.TextArea
         className="w-80 p-3"
         size="small"
@@ -131,33 +157,48 @@ const FeedbackWidget: FC<Props> = ({ onClose }) => {
                 </div>
               </div>
             ) : (
-              <Tooltip.Root delayDuration={0}>
-                <Tooltip.Trigger>
-                  <Button
-                    as="span"
-                    type="default"
-                    disabled={isSavingScreenshot}
-                    loading={isSavingScreenshot}
-                    className="px-2 py-1.5"
+              <Dropdown
+                className="feedback-dropdown"
+                size="small"
+                overlay={[
+                  <Dropdown.Item
+                    key="upload-screenshot"
+                    icon={<IconUpload size={14} />}
+                    onClick={() => {
+                      if (uploadButtonRef.current) (uploadButtonRef.current as any).click()
+                    }}
+                  >
+                    Upload screenshot
+                  </Dropdown.Item>,
+                  <Dropdown.Item
+                    key="capture-screenshot"
                     icon={<IconCamera size={14} />}
                     onClick={() => captureScreenshot()}
-                  />
-                </Tooltip.Trigger>
-                <Tooltip.Content side="bottom">
-                  <Tooltip.Arrow className="radix-tooltip-arrow" />
-                  <div
-                    className={[
-                      'bg-scale-100 rounded py-1 px-2 leading-none shadow', // background
-                      'w-[130px] text-center border-scale-200 border', //border
-                    ].join(' ')}
                   >
-                    <span className="text-scale-1200 text-xs">
-                      Capture screenshot of current view
-                    </span>
-                  </div>
-                </Tooltip.Content>
-              </Tooltip.Root>
+                    Capture screenshot
+                  </Dropdown.Item>,
+                ]}
+              >
+                <Button
+                  asChild
+                  type="default"
+                  disabled={isSavingScreenshot}
+                  loading={isSavingScreenshot}
+                  className="px-2 py-1.5"
+                  icon={<IconImage size={14} />}
+                >
+                  <span></span>
+                </Button>
+              </Dropdown>
             )}
+            <input
+              type="file"
+              // @ts-ignore
+              ref={uploadButtonRef}
+              className="hidden"
+              accept="image/png"
+              onChange={onFilesUpload}
+            />
             <Button disabled={isSending} loading={isSending} onClick={sendFeedback}>
               Send feedback
             </Button>
@@ -173,7 +214,7 @@ const FeedbackWidget: FC<Props> = ({ onClose }) => {
             </a>
           </Link>{' '}
           or{' '}
-          <a href="https://supabase.com/docs" target="_blank">
+          <a href="https://supabase.com/docs" target="_blank" rel="noreferrer">
             <span className="cursor-pointer text-brand-900 transition-colors hover:text-brand-1200">
               browse our docs
             </span>

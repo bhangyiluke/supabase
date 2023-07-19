@@ -51,14 +51,17 @@ interface ISectionDetails {}
 interface ISectionExamples {}
 
 const RefSubLayout: FC<RefSubLayoutType> & RefSubLayoutSubComponents = (props) => {
-  return <div className="flex flex-col w-full divide-y">{props.children}</div>
+  return (
+    <div className="flex flex-col w-full divide-y px-5 max-w-7xl mx-auto py-16">
+      {props.children}
+    </div>
+  )
 }
 
 const Section: FC<ISectionContainer> = (props) => {
-  // console.log({ props })
   return (
     <article
-      key={props.id}
+      key={props.id + 'section'}
       className={[
         props.singleColumn ? 'prose dark:prose-dark w-full' : 'w-full',
         'py-16 lg:py-32 first:pt-8 last:pb-8',
@@ -129,7 +132,7 @@ const StickyHeader: FC<StickyHeader> = ({ icon, ...props }) => {
 }
 
 const Details: FC<ISectionDetails> = (props) => {
-  return <div className="relative overflow-hidden w-full">{props.children}</div>
+  return <div className="relative w-full">{props.children}</div>
 }
 
 const Examples: FC<ISectionExamples> = (props) => {
@@ -149,10 +152,9 @@ const EducationRow: FC<IEducationRow> = (props) => {
 }
 
 const EducationSection: FC<IEducationSection> = ({ icon, hideTitle = false, ...props }) => {
-  // console.log({ props })
   return (
     <article
-      key={props.id}
+      key={props.id + 'education'}
       className={'prose dark:prose-dark max-w-none py-16 lg:py-32 first:pt-8 last:pb-8'}
     >
       {!hideTitle && <StickyHeader {...props} icon={icon} />}

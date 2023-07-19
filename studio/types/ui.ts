@@ -1,6 +1,9 @@
+import type { PostgresColumn } from '@supabase/postgres-meta'
+
 export interface Notification {
   category: 'info' | 'error' | 'success' | 'loading'
   message: string // Readable message for users to understand
+  description?: string
   id?: string
   error?: any // Optional: Any other errors that needs to be logged out in the console
   progress?: number // Optional: For loading messages to show a progress bar (Out of 100)
@@ -15,9 +18,9 @@ interface NotificationMetadata {
 export interface ChartIntervals {
   key: 'minutely' | 'hourly' | 'daily' | '5min' | '15min' | '1hr' | '1day' | '7day'
   label: string
-  startValue: 1 | 24 | 7
-  startUnit: 'hour' | 'day'
-  format: 'MMM D, h:mma' | 'MMM D, ha' | 'MMM D'
+  startValue: number
+  startUnit: 'minute' | 'hour' | 'day'
+  format?: 'MMM D, h:mm:ssa' | 'MMM D, h:mma' | 'MMM D, ha' | 'MMM D'
 }
 
 export interface VaultSecret {
@@ -32,6 +35,10 @@ export interface VaultSecret {
 }
 
 export interface SchemaView {
+  id: number
   name: string
   schema: string
+  is_updatable: boolean
+  comment?: string
+  columns: PostgresColumn[]
 }

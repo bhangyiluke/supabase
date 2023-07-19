@@ -1,6 +1,6 @@
 import createGlobe from 'cobe'
 import { useEffect, useRef } from 'react'
-import { useTheme } from './Providers/index'
+import { useTheme } from 'common/Providers'
 
 const Globe = () => {
   const { isDarkMode } = useTheme()
@@ -51,7 +51,10 @@ const Globe = () => {
       },
     })
     setTimeout(() => (canvasRef.current.style.opacity = '1'))
-    return () => cobe.destroy()
+    return () => {
+      cobe.destroy()
+      window.removeEventListener('resize', onResize)
+    }
   }, [isDarkMode])
 
   return (

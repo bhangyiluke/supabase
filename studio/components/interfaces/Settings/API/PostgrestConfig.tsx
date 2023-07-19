@@ -1,14 +1,14 @@
-import { useContext, FC, useEffect } from 'react'
-import { indexOf } from 'lodash'
-import { useRouter } from 'next/router'
-import { observer } from 'mobx-react-lite'
-import { Input, Form, IconAlertCircle, InputNumber } from 'ui'
 import { PermissionAction } from '@supabase/shared-types/out/constants'
+import { indexOf } from 'lodash'
+import { observer } from 'mobx-react-lite'
+import { useContext, useEffect } from 'react'
+import { Form, IconAlertCircle, Input, InputNumber } from 'ui'
 
-import { checkPermissions, useStore, useProjectPostgrestConfig } from 'hooks'
-import { API_URL } from 'lib/constants'
-import { patch } from 'lib/common/fetch'
+import { useParams } from 'common/hooks'
 import MultiSelect from 'components/ui/MultiSelect'
+import { useProjectPostgrestConfigQuery } from 'data/config/project-postgrest-config-query'
+import { useProjectPostgrestConfigUpdateMutation } from 'data/config/project-postgrest-config-update-mutation'
+import { useCheckPermissions, useStore } from 'hooks'
 import { PageContext } from 'pages/project/[ref]/settings/api'
 
 import {
@@ -19,45 +19,35 @@ import {
   FormSectionLabel,
 } from 'components/ui/Forms'
 
-interface Props {}
-
-const PostgrestConfig: FC<Props> = ({}) => {
+const PostgrestConfig = () => {
   const PageState: any = useContext(PageContext)
+  const { ref: projectRef } = useParams()
   const { ui } = useStore()
   const { meta } = PageState
 
-  const router = useRouter()
-  const { ref } = router.query
-
-  const formId = 'project-postgres-config'
-  const { config, isError, isLoading } = useProjectPostgrestConfig(ref as string | undefined)
-
-  const initialValues = {
-    db_schema: '',
-    max_rows: '',
-    db_extra_search_path: '',
-  }
-
-  const canUpdatePostgrestConfig = checkPermissions(
+  const { data: config, isError } = useProjectPostgrestConfigQuery({ projectRef })
+  const { mutate: updatePostgrestConfig, isLoading: isUpdating } =
+    useProjectPostgrestConfigUpdateMutation({
+      onSuccess: () => {
+        ui.setNotification({ category: 'success', message: 'Successfully saved settings' })
+      },
+    })
+  const canUpdatePostgrestConfig = useCheckPermissions(
     PermissionAction.UPDATE,
     'custom_config_postgrest'
   )
 
-  const updateConfig = async (updatedConfig: any) => {
-    try {
-      const response = await patch(`${API_URL}/projects/${ref}/config/postgrest`, updatedConfig)
-      if (response.error) {
-        throw response.error
-      } else {
-        ui.setNotification({ category: 'success', message: 'Successfully saved settings' })
-      }
-    } catch (error: any) {
-      ui.setNotification({
-        error,
-        category: 'error',
-        message: `Failed to update config: ${error.message}`,
-      })
-    }
+  const formId = 'project-postgres-config'
+  const initialValues = { db_schema: '', max_rows: '', db_extra_search_path: '' }
+
+  const updateConfig = async (updatedConfig: typeof initialValues) => {
+    if (!projectRef) return console.error('Project ref is required')
+    updatePostgrestConfig({
+      projectRef,
+      dbSchema: updatedConfig.db_schema,
+      maxRows: updatedConfig.max_rows,
+      dbExtraSearchPath: updatedConfig.db_extra_search_path,
+    })
   }
 
   const permanentSchema = ['public', 'storage']
@@ -82,11 +72,14 @@ const PostgrestConfig: FC<Props> = ({}) => {
 
   return (
     <Form id={formId} initialValues={initialValues} validate={() => {}} onSubmit={updateConfig}>
-      {({ isSubmitting, handleReset, resetForm, values, initialValues }: any) => {
+      {({ handleReset, resetForm, values, initialValues }: any) => {
         const hasChanges = JSON.stringify(values) !== JSON.stringify(initialValues)
 
+        // [Alaister] although this "technically" is breaking the rules of React hooks
+        // it won't error because the hooks are always rendered in the same order
+        // eslint-disable-next-line react-hooks/rules-of-hooks
         useEffect(() => {
-          if (!isLoading && config) {
+          if (config) {
             const values = {
               db_schema: config.db_schema,
               max_rows: config.max_rows,
@@ -94,7 +87,7 @@ const PostgrestConfig: FC<Props> = ({}) => {
             }
             resetForm({ values, initialValues: values })
           }
-        }, [isLoading])
+        }, [config])
 
         return (
           <>
@@ -102,10 +95,10 @@ const PostgrestConfig: FC<Props> = ({}) => {
               disabled={true}
               header={<p>API settings</p>}
               footer={
-                <div className="flex py-4 px-8">
+                <div className="flex px-8 py-4">
                   <FormActions
                     form={formId}
-                    isSubmitting={isSubmitting}
+                    isSubmitting={isUpdating}
                     hasChanges={hasChanges}
                     handleReset={handleReset}
                     disabled={!canUpdatePostgrestConfig}
@@ -119,7 +112,7 @@ const PostgrestConfig: FC<Props> = ({}) => {
               }
             >
               {isError ? (
-                <div className="flex items-center justify-center space-x-2 py-8">
+                <div className="flex items-center justify-center py-8 space-x-2">
                   <IconAlertCircle size={16} strokeWidth={1.5} />
                   <p className="text-sm text-scale-1100">Failed to retrieve API settings</p>
                 </div>
@@ -142,8 +135,8 @@ const PostgrestConfig: FC<Props> = ({}) => {
                           emptyMessage={
                             <>
                               <IconAlertCircle strokeWidth={2} />
-                              <div className="mt-2 flex flex-col text-center">
-                                <p className="align-center text-sm">
+                              <div className="flex flex-col mt-2 text-center">
+                                <p className="text-sm align-center">
                                   No schema available to choose
                                 </p>
                                 <p className="text-xs opacity-50">

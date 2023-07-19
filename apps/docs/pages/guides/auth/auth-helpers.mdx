@@ -2,7 +2,7 @@ import Layout from '~/layouts/DefaultGuideLayout'
 
 export const meta = {
   id: 'index',
-  title: 'Auth Helpers',
+  title: 'Auth Helpers Overview',
   description: 'A collection of framework-specific Auth utilities for working with Supabase.',
   sidebar_label: 'Overview',
 }
@@ -17,6 +17,14 @@ A collection of framework-specific Auth utilities for working with Supabase.
         to={'/guides/auth/auth-helpers/auth-ui'}
         title={'Auth UI'}
         description={'A pre-built React component for authenticating users.'}
+      />
+    </div>
+    {/* Flutter Auth UI */}
+    <div className="col-span-6">
+      <ButtonCard
+        to={'/guides/auth/auth-helpers/flutter-auth-ui'}
+        title={'Flutter Auth UI'}
+        description={'Pre-built Flutter widgets for authenticating users.'}
       />
     </div>
     {/* Next.js */}

@@ -1,56 +1,58 @@
-import { FC, useState } from 'react'
-import {
-  Dropdown,
-  IconPlus,
-  IconCreditCard,
-  Button,
-  Input,
-  Badge,
-  Modal,
-  Alert,
-  IconMoreHorizontal,
-  IconX,
-} from 'ui'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { PermissionAction } from '@supabase/shared-types/out/constants'
+import { useState } from 'react'
+import {
+  Alert,
+  Badge,
+  Button,
+  Dropdown,
+  IconCreditCard,
+  IconMoreHorizontal,
+  IconPlus,
+  IconX,
+  Input,
+  Modal,
+} from 'ui'
 
-import { checkPermissions, useStore, useFlag } from 'hooks'
-import { delete_, patch } from 'lib/common/fetch'
-import { getURL } from 'lib/helpers'
-import { API_URL } from 'lib/constants'
-import Panel from 'components/ui/Panel'
-import { AddNewPaymentMethodModal } from 'components/interfaces/Billing'
+import { AddNewPaymentMethodModal } from 'components/interfaces/BillingV2'
 import NoPermission from 'components/ui/NoPermission'
+import Panel from 'components/ui/Panel'
+import { useCheckPermissions, useSelectedOrganization, useStore } from 'hooks'
+import { delete_, patch } from 'lib/common/fetch'
+import { API_URL, BASE_PATH } from 'lib/constants'
+import { getURL } from 'lib/helpers'
 
-interface Props {
+export interface PaymentMethodsProps {
   loading: boolean
   defaultPaymentMethod: string
   paymentMethods: any[]
   onDefaultMethodUpdated: (updatedCustomer: any) => void
   onPaymentMethodsDeleted: () => void
+  onPaymentMethodAdded: () => void
 }
 
-const PaymentMethods: FC<Props> = ({
+const PaymentMethods = ({
   loading,
   defaultPaymentMethod,
   paymentMethods,
   onDefaultMethodUpdated,
   onPaymentMethodsDeleted,
-}) => {
+  onPaymentMethodAdded,
+}: PaymentMethodsProps) => {
   const { ui } = useStore()
-  const orgSlug = ui.selectedOrganization?.slug ?? ''
-  const isOwner = ui.selectedOrganization?.is_owner
+  const selectedOrganization = useSelectedOrganization()
+  const orgSlug = selectedOrganization?.slug ?? ''
 
   const [selectedMethodForDefault, setSelectedMethodForDefault] = useState<any>()
   const [selectedMethodToDelete, setSelectedMethodToDelete] = useState<any>()
   const [showAddPaymentMethodModal, setShowAddPaymentMethodModal] = useState(false)
   const [isUpdatingPaymentMethod, setIsUpdatingPaymentMethod] = useState(false)
 
-  const canReadPaymentMethods = checkPermissions(
+  const canReadPaymentMethods = useCheckPermissions(
     PermissionAction.BILLING_READ,
     'stripe.payment_methods'
   )
-  const canUpdatePaymentMethods = checkPermissions(
+  const canUpdatePaymentMethods = useCheckPermissions(
     PermissionAction.BILLING_WRITE,
     'stripe.payment_methods'
   )
@@ -100,12 +102,22 @@ const PaymentMethods: FC<Props> = ({
     }
   }
 
+  const onLocalPaymentMethodAdded = () => {
+    setShowAddPaymentMethodModal(false)
+    return onPaymentMethodAdded()
+  }
+
   return (
     <>
       <div className="space-y-2">
         <div>
           <h4>Payment methods</h4>
-          <p className="text-sm opacity-50">Charges will be deducted from the default card</p>
+          <p className="text-sm opacity-50">
+            When adding a new payment method, either remove the old one or go to your projects'
+            subscription to explicitly update the payment method. Marking a payment method as
+            "default" is only relevant for new projects or if there are no other payment methods on
+            your account.
+          </p>
         </div>
         {!canReadPaymentMethods ? (
           <Panel>
@@ -154,7 +166,8 @@ const PaymentMethods: FC<Props> = ({
                       <div key={paymentMethod.id} className="flex items-center justify-between">
                         <div className="flex items-center space-x-8">
                           <img
-                            src={`/img/payment-methods/${paymentMethod.card.brand
+                            alt="Credit card brand"
+                            src={`${BASE_PATH}/img/payment-methods/${paymentMethod.card.brand
                               .replace(' ', '-')
                               .toLowerCase()}.png`}
                             width="32"
@@ -180,22 +193,24 @@ const PaymentMethods: FC<Props> = ({
                           <>
                             {isDefault ? (
                               <Tooltip.Root delayDuration={0}>
-                                <Tooltip.Trigger>
-                                  <Button disabled as="span" type="outline" icon={<IconX />} />
+                                <Tooltip.Trigger asChild>
+                                  <Button disabled type="outline" icon={<IconX />} />
                                 </Tooltip.Trigger>
-                                <Tooltip.Content side="bottom">
-                                  <Tooltip.Arrow className="radix-tooltip-arrow" />
-                                  <div
-                                    className={[
-                                      'rounded bg-scale-100 py-1 px-2 leading-none shadow', // background
-                                      'w-48 border border-scale-200 text-center', //border
-                                    ].join(' ')}
-                                  >
-                                    <span className="text-xs text-scale-1200">
-                                      Your default payment method cannot be deleted
-                                    </span>
-                                  </div>
-                                </Tooltip.Content>
+                                <Tooltip.Portal>
+                                  <Tooltip.Content side="bottom">
+                                    <Tooltip.Arrow className="radix-tooltip-arrow" />
+                                    <div
+                                      className={[
+                                        'rounded bg-scale-100 py-1 px-2 leading-none shadow', // background
+                                        'w-48 border border-scale-200 text-center', //border
+                                      ].join(' ')}
+                                    >
+                                      <span className="text-xs text-scale-1200">
+                                        Your default payment method cannot be deleted
+                                      </span>
+                                    </div>
+                                  </Tooltip.Content>
+                                </Tooltip.Portal>
                               </Tooltip.Root>
                             ) : (
                               <Dropdown
@@ -244,8 +259,9 @@ const PaymentMethods: FC<Props> = ({
 
       <AddNewPaymentMethodModal
         visible={showAddPaymentMethodModal}
-        returnUrl={`${getURL()}/org/${orgSlug}/settings`}
+        returnUrl={`${getURL()}/org/${orgSlug}/billing`}
         onCancel={() => setShowAddPaymentMethodModal(false)}
+        onConfirm={() => onLocalPaymentMethodAdded()}
       />
 
       <Modal

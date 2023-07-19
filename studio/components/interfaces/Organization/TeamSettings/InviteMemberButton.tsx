@@ -1,43 +1,59 @@
-import { isNil } from 'lodash'
-import { useRouter } from 'next/router'
-import { FC, useEffect, useState } from 'react'
-import { object, string } from 'yup'
 import * as Tooltip from '@radix-ui/react-tooltip'
-import { Button, Form, IconMail, Input, Modal, Select } from 'ui'
+import { isNil } from 'lodash'
+import { useEffect, useState } from 'react'
+import { object, string } from 'yup'
 
-import { Member, User, Role } from 'types'
-import { checkPermissions, useOrganizationDetail, useStore } from 'hooks'
-import { post } from 'lib/common/fetch'
-import { API_URL } from 'lib/constants'
 import { PermissionAction } from '@supabase/shared-types/out/constants'
+import { useParams } from 'common/hooks'
+import { useOrganizationMemberInviteCreateMutation } from 'data/organizations/organization-member-invite-create-mutation'
+import { doPermissionsCheck, useGetPermissions, useStore } from 'hooks'
+import { Member, Role } from 'types'
+import { Button, Form, IconMail, Input, Listbox, Modal } from 'ui'
 
-interface Props {
-  user: User
+export interface InviteMemberButtonProps {
+  orgId: number
+  userId: number
   members: Member[]
   roles: Role[]
   rolesAddable: Number[]
 }
 
-const InviteMemberButton: FC<Props> = ({ user, members = [], roles = [], rolesAddable = [] }) => {
+const InviteMemberButton = ({
+  orgId,
+  userId,
+  members = [],
+  roles = [],
+  rolesAddable = [],
+}: InviteMemberButtonProps) => {
   const { ui } = useStore()
-  const router = useRouter()
-  const { slug } = router.query
-
+  const { slug } = useParams()
   const [isOpen, setIsOpen] = useState(false)
-  const { mutateOrgMembers } = useOrganizationDetail((slug as string) || '')
+  const { permissions: allPermissions } = useGetPermissions()
 
   const canInviteMembers = roles.some(({ id: role_id }) =>
-    checkPermissions(PermissionAction.CREATE, 'user_invites', { resource: { role_id } })
+    doPermissionsCheck(
+      allPermissions,
+      PermissionAction.CREATE,
+      'user_invites',
+      { resource: { role_id } },
+      orgId
+    )
   )
 
   const initialValues = { email: '', role: '' }
-
   const schema = object({
     email: string().email('Must be a valid email address').required('Email is required'),
     role: string().required('Role is required'),
   })
 
-  const onInviteMember = async (values: any, { setSubmitting, resetForm }: any) => {
+  const { mutateAsync: inviteMember, isLoading: isInviting } =
+    useOrganizationMemberInviteCreateMutation()
+
+  const onInviteMember = async (values: any, { resetForm }: any) => {
+    if (!slug) {
+      throw new Error('slug is required')
+    }
+
     const existingMember = members.find(
       (member) => member.primary_email === values.email.toLowerCase()
     )
@@ -57,38 +73,21 @@ const InviteMemberButton: FC<Props> = ({ user, members = [], roles = [], rolesAd
 
     const roleId = Number(values.role)
 
-    setSubmitting(true)
-
-    const response = await post(`${API_URL}/organizations/${slug}/members/invite`, {
-      invited_email: values.email.toLowerCase(),
-      owner_id: user.id,
-      role_id: roleId,
-    })
-
-    if (response.error) {
-      ui.setNotification({
-        category: 'error',
-        message: `Failed to add member: ${response.error.message}`,
+    try {
+      const response = await inviteMember({
+        slug,
+        invitedEmail: values.email.toLowerCase(),
+        ownerId: userId,
+        roleId,
       })
-    } else if (isNil(response)) {
-      ui.setNotification({ category: 'error', message: 'Failed to add member' })
-    } else {
-      const newMember: Member = {
-        id: 0,
-        invited_id: response.invited_id,
-        invited_at: response.invited_at,
-        primary_email: response.invited_email,
-        username: response.invited_email[0],
-        role_ids: [response.role_id],
+      if (isNil(response)) {
+        ui.setNotification({ category: 'error', message: 'Failed to add member' })
+      } else {
+        ui.setNotification({ category: 'success', message: 'Successfully added new member.' })
+        setIsOpen(!isOpen)
+        resetForm({ initialValues: { ...initialValues, role: roleId } })
       }
-      mutateOrgMembers([...members, newMember])
-      ui.setNotification({ category: 'success', message: 'Successfully added new member.' })
-
-      setIsOpen(!isOpen)
-      resetForm({ initialValues: { ...initialValues, role: roleId } })
-    }
-
-    setSubmitting(false)
+    } catch (error) {}
   }
 
   return (
@@ -100,19 +99,21 @@ const InviteMemberButton: FC<Props> = ({ user, members = [], roles = [], rolesAd
           </Button>
         </Tooltip.Trigger>
         {!canInviteMembers && (
-          <Tooltip.Content side="bottom">
-            <Tooltip.Arrow className="radix-tooltip-arrow" />
-            <div
-              className={[
-                'rounded bg-scale-100 py-1 px-2 leading-none shadow',
-                'border border-scale-200',
-              ].join(' ')}
-            >
-              <span className="text-xs text-scale-1200">
-                You need additional permissions to invite a member to this organization
-              </span>
-            </div>
-          </Tooltip.Content>
+          <Tooltip.Portal>
+            <Tooltip.Content side="bottom">
+              <Tooltip.Arrow className="radix-tooltip-arrow" />
+              <div
+                className={[
+                  'rounded bg-scale-100 py-1 px-2 leading-none shadow',
+                  'border border-scale-200',
+                ].join(' ')}
+              >
+                <span className="text-xs text-scale-1200">
+                  You need additional permissions to invite a member to this organization
+                </span>
+              </div>
+            </Tooltip.Content>
+          </Tooltip.Portal>
         )}
       </Tooltip.Root>
       <Modal
@@ -125,13 +126,22 @@ const InviteMemberButton: FC<Props> = ({ user, members = [], roles = [], rolesAd
         header="Invite a member to this organization"
       >
         <Form validationSchema={schema} initialValues={initialValues} onSubmit={onInviteMember}>
-          {({ values, isSubmitting, resetForm }: any) => {
-            // Catches 'roles' when its available and then adds a default value for role select
+          {({ values, resetForm }: any) => {
+            // [Alaister] although this "technically" is breaking the rules of React hooks
+            // it won't error because the hooks are always rendered in the same order
+            // eslint-disable-next-line react-hooks/rules-of-hooks
             useEffect(() => {
+              // Catches 'roles' when its available and then adds a default value for role select
               if (roles) {
                 resetForm({
-                  values: { ...initialValues, role: roles[0].id },
-                  initialValues: { ...initialValues, role: roles[0].id },
+                  values: {
+                    ...initialValues,
+                    role: roles.find((role) => role.name === 'Developer')?.id,
+                  },
+                  initialValues: {
+                    ...initialValues,
+                    role: roles.find((role) => role.name === 'Developer')?.id,
+                  },
                 })
               }
             }, [roles])
@@ -146,7 +156,8 @@ const InviteMemberButton: FC<Props> = ({ user, members = [], roles = [], rolesAd
                     <div className="space-y-4">
                       <div className="space-y-2">
                         {roles && (
-                          <Select
+                          <Listbox
+                            id="role"
                             name="role"
                             label="Member role"
                             error={
@@ -156,11 +167,11 @@ const InviteMemberButton: FC<Props> = ({ user, members = [], roles = [], rolesAd
                             }
                           >
                             {roles.map((role: any) => (
-                              <Select.Option key={role.id} value={role.id}>
+                              <Listbox.Option key={role.id} value={role.id} label={role.name}>
                                 {role.name}
-                              </Select.Option>
+                              </Listbox.Option>
                             ))}
-                          </Select>
+                          </Listbox>
                         )}
                       </div>
 
@@ -181,8 +192,8 @@ const InviteMemberButton: FC<Props> = ({ user, members = [], roles = [], rolesAd
                       block
                       size="medium"
                       htmlType="submit"
-                      disabled={isSubmitting || invalidRoleSelected}
-                      loading={isSubmitting}
+                      disabled={isInviting || invalidRoleSelected}
+                      loading={isInviting}
                     >
                       Invite new member
                     </Button>

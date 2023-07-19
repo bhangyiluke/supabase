@@ -12,9 +12,9 @@
 - [x] Cơ sở dữ liệu Postgres tự quản lý. [Tài liệu](https://supabase.com/docs/guides/database)
 - [x] Xác thực và uỷ quyền. [Tài liệu](https://supabase.com/docs/guides/auth)
 - [x] APIs tự động khởi tạo.
-  - [x] REST. [Tài liệu](https://supabase.com/docs/guides/api#rest-api)
-  - [x] Lắng nghe thay đổi thời gian thực. [Tài liệu](https://supabase.com/docs/guides/api#realtime-api)
-  - [x] GraphQL (Thử nghiệm). [Tài liệu](https://supabase.com/docs/guides/api#graphql-api)
+  - [x] REST. [Tài liệu](https://supabase.com/docs/guides/api#rest-api-overview)
+  - [x] Lắng nghe thay đổi thời gian thực. [Tài liệu](https://supabase.com/docs/guides/api#realtime-api-overview)
+  - [x] GraphQL (Thử nghiệm). [Tài liệu](https://supabase.com/docs/guides/api#graphql-api-overview)
 - [x] Chức năng hàm.
   - [x] Hàm dành cho cơ sở dữ liệu (Database functions). [Tài liệu](https://supabase.com/docs/guides/database/functions)
   - [x] Hàm được phân phối trên toàn cầu (Edge Functions). [Tài liệu](https://supabase.com/docs/guides/functions)
@@ -27,7 +27,7 @@
 
 Để có tài liệu đầy đủ, hãy truy cập [supabase.com/docs](https://supabase.com/docs)
 
-Để biết cách Đóng góp, hãy truy cập [Bắt đầu](./DEVELOPERS.md)
+Để biết cách Đóng góp, hãy truy cập [Bắt đầu](../DEVELOPERS.md)
 
 ## Hỗ trợ & Cộng đồng
 
@@ -39,7 +39,7 @@
 ## Trạng thái
 
 - [x] Alpha: Chúng tôi đang thử nghiệm Supabase với một nhóm người dùng kín
-- [x] Public Alpha: Bất kỳ ai cũng có thể đăng ký tại [app.supabase.com](https://app.supabase.com). Nhưng hãy bình tĩnh với chúng tôi, sẽ có một vài lỗi nhỏ.
+- [x] Public Alpha: Bất kỳ ai cũng có thể đăng ký tại [supabase.com/dashboard](https://supabase.com/dashboard). Nhưng hãy bình tĩnh với chúng tôi, sẽ có một vài lỗi nhỏ.
 - [x] Public Beta: Đủ ổn định cho hầu hết các trường hợp sử dụng không dành cho môi trường doanh nghiệp (production)
 - [ ] Public: Sẵn sàng cho môi trường doanh nghiệp (production)
 
@@ -55,7 +55,7 @@ Supabase là sự kết hợp của các công cụ mã nguồn mở. Các tính
 
 **Kiến trúc**
 
-Supabase là một [nền tảng lưu trữ cơ sở dữ liệu](https://app.supabase.com). Bạn có thể đăng ký và bắt đầu sử dụng Supabase mà không cần cài đặt bất kỳ thứ gì.
+Supabase là một [nền tảng lưu trữ cơ sở dữ liệu](https://supabase.com/dashboard). Bạn có thể đăng ký và bắt đầu sử dụng Supabase mà không cần cài đặt bất kỳ thứ gì.
 Bạn cũng có thể [tự quản lý](https://supabase.com/docs/guides/hosting/overview) và [phát triển cục bộ](https://supabase.com/docs/guides/local-development).
 
 ![Kiến trúc](https://user-images.githubusercontent.com/70828596/187547862-ffa9d058-0c3a-4851-a3e7-92ccfca4b596.png)
@@ -147,12 +147,11 @@ Phương pháp tiếp cận của chúng tôi cho các thư viện hỗ trợ l�
   </tr>
   <tr>
     <td>Kotlin</td>
-    <td>-</td>
-    <td><a href="https://github.com/supabase-community/postgrest-kt" target="_blank" rel="noopener noreferrer">postgrest-kt</a></td>
-    <td><a href="https://github.com/supabase-community/gotrue-kt" target="_blank" rel="noopener noreferrer">gotrue-kt</a></td>
-    <td>-</td>
-    <td>-</td>
-    <td>-</td>
+    <td><a href="https://github.com/supabase-community/supabase-kt" target="_blank" rel="noopener noreferrer">supabase-kt</a></td>
+    <td><a href="https://github.com/supabase-community/supabase-kt/tree/master/Postgrest" target="_blank" rel="noopener noreferrer">postgrest-kt</a></td>
+    <td><a href="https://github.com/supabase-community/supabase-kt/tree/master/GoTrue" target="_blank" rel="noopener noreferrer">gotrue-kt</a></td>
+    <td><a href="https://github.com/supabase-community/supabase-kt/tree/master/Realtime" target="_blank" rel="noopener noreferrer">realtime-kt</a></td>
+    <td><a href="https://github.com/supabase-community/supabase-kt/tree/master/Storage" target="_blank" rel="noopener noreferrer">storage-kt</a></td>
   </tr>
   <tr>
     <td>Python</td>

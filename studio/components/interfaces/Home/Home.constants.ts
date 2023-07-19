@@ -7,18 +7,40 @@ export const CLIENT_LIBRARIES = [
     gitUrl: 'https://github.com/supabase/supabase-js',
   },
   {
-    language: 'Python',
-    officialSupport: false,
-    releaseState: 'Alpha',
-    docsUrl: undefined,
-    gitUrl: 'https://github.com/supabase/supabase-py',
-  },
-  {
     language: 'Flutter',
-    officialSupport: false,
+    officialSupport: true,
     releaseState: undefined,
     docsUrl: 'https://supabase.com/docs/reference/dart/installing',
     gitUrl: 'https://github.com/supabase/supabase-flutter',
+  },
+  {
+    language: 'Python',
+    officialSupport: false,
+    releaseState: 'Alpha',
+    docsUrl: 'https://supabase.com/docs/reference/python/initializing',
+    gitUrl: 'https://github.com/supabase/supabase-py',
+  },
+  {
+    language: 'C#',
+    officialSupport: false,
+    releaseState: undefined,
+    docsUrl: 'https://supabase.com/docs/reference/csharp/installing',
+    gitUrl: 'https://github.com/supabase-community/supabase-csharp',
+    altIconName: 'c-sharp',
+  },
+  {
+    language: 'Swift',
+    officialSupport: false,
+    releaseState: undefined,
+    docsUrl: 'https://supabase.com/docs/reference/swift/initializing',
+    gitUrl: 'https://github.com/supabase-community/supabase-swift',
+  },
+  {
+    language: 'Kotlin',
+    officialSupport: false,
+    releaseState: undefined,
+    docsUrl: 'https://supabase.com/docs/reference/kotlin/installing',
+    gitUrl: 'https://github.com/supabase-community/supabase-kt',
   },
 ]
 
@@ -75,7 +97,7 @@ export const EXAMPLE_PROJECTS = [
     framework: 'NextJS',
     title: 'Next.js todo list app',
     description: 'NextJS todo list example',
-    url: 'https://github.com/supabase/examples/tree/main/supabase-js-v1/todo-list/nextjs-todo-list',
+    url: 'https://github.com/supabase/supabase/tree/master/examples/todo-list/nextjs-todo-list',
   },
   {
     framework: 'React',

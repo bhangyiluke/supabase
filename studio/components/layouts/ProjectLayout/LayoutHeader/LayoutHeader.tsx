@@ -1,44 +1,52 @@
+import { useParams } from 'common'
 import Link from 'next/link'
-import { observer } from 'mobx-react-lite'
-import { useRouter } from 'next/router'
+import { Badge } from 'ui'
 
-import { IS_PLATFORM, PRICING_TIER_PRODUCT_IDS } from 'lib/constants'
-import { useStore, useProjectUsage } from 'hooks'
+import { getResourcesExceededLimits } from 'components/ui/OveragesBanner/OveragesBanner.utils'
+import { useProjectReadOnlyQuery } from 'data/config/project-read-only-query'
+import { useProjectUsageQuery } from 'data/usage/project-usage-query'
+import { useFlag, useSelectedOrganization, useSelectedProject } from 'hooks'
+import { IS_PLATFORM } from 'lib/constants'
 import BreadcrumbsView from './BreadcrumbsView'
-import OrgDropdown from './OrgDropdown'
-import ProjectDropdown from './ProjectDropdown'
 import FeedbackDropdown from './FeedbackDropdown'
 import HelpPopover from './HelpPopover'
 import NotificationsPopover from './NotificationsPopover'
-import { Badge } from 'ui'
-import { getResourcesExceededLimits } from 'components/ui/OveragesBanner/OveragesBanner.utils'
+import OrgDropdown from './OrgDropdown'
+import ProjectDropdown from './ProjectDropdown'
+import { useProjectSubscriptionV2Query } from 'data/subscriptions/project-subscription-v2-query'
 
 const LayoutHeader = ({ customHeaderComponents, breadcrumbs = [], headerBorder = true }: any) => {
-  const { ui } = useStore()
-  const { selectedOrganization, selectedProject } = ui
+  const selectedOrganization = useSelectedOrganization()
+  const selectedProject = useSelectedProject()
 
-  const router = useRouter()
-  const { ref } = router.query
+  const { ref: projectRef } = useParams()
+  const { data: isReadOnlyMode } = useProjectReadOnlyQuery({
+    projectRef: selectedProject?.ref,
+    connectionString: selectedProject?.connectionString,
+  })
 
-  const { usage } = useProjectUsage(ref as string)
+  const { data: usage } = useProjectUsageQuery({ projectRef })
   const resourcesExceededLimits = getResourcesExceededLimits(usage)
-  const projectHasNoLimits =
-    ui.selectedProject?.subscription_tier === PRICING_TIER_PRODUCT_IDS.PAYG ||
-    ui.selectedProject?.subscription_tier === PRICING_TIER_PRODUCT_IDS.ENTERPRISE
+
+  const { data: subscription } = useProjectSubscriptionV2Query({ projectRef })
+
+  const projectHasNoLimits = subscription?.usage_billing_enabled === false
+
   const showOverUsageBadge =
-    selectedProject?.subscription_tier !== undefined &&
+    useFlag('overusageBadge') &&
+    subscription !== undefined &&
     !projectHasNoLimits &&
     resourcesExceededLimits.length > 0
 
   return (
     <div
       className={`flex h-12 max-h-12 items-center justify-between py-2 px-5 ${
-        headerBorder ? 'border-b dark:border-dark' : ''
+        headerBorder ? 'border-b border-scale-500' : ''
       }`}
     >
       <div className="-ml-2 flex items-center text-sm">
         {/* Organization is selected */}
-        {selectedOrganization ? (
+        {projectRef && selectedOrganization ? (
           <>
             {/* Org Dropdown */}
             <OrgDropdown />
@@ -64,16 +72,27 @@ const LayoutHeader = ({ customHeaderComponents, breadcrumbs = [], headerBorder =
                 {/* Project Dropdown */}
                 <ProjectDropdown />
 
-                {/* [Joshen TODO] Temporarily hidden until usage endpoint is sorted out */}
-                {/* {showOverUsageBadge && (
+                {/* [Terry] Temporary until we figure out how we want to display this permanently */}
+                {/* context: https://www.notion.so/supabase/DB-Disk-Size-Free-tier-Read-only-Critical-f2b8937c13a149e3ac769fe5888f6db0*/}
+                {isReadOnlyMode && (
                   <div className="ml-2">
-                    <Link href={`/project/${ref}/settings/billing/subscription`}>
+                    <Link href={`/project/${projectRef}/settings/billing/usage`}>
                       <a>
-                        <Badge color="red">Project has exceeded usage limits </Badge>
+                        <Badge color="red">Project is in read-only mode</Badge>
                       </a>
                     </Link>
                   </div>
-                )} */}
+                )}
+
+                {showOverUsageBadge && (
+                  <div className="ml-2">
+                    <Link href={`/project/${projectRef}/settings/billing/usage`}>
+                      <a>
+                        <Badge color="red">Exceeding usage limits</Badge>
+                      </a>
+                    </Link>
+                  </div>
+                )}
               </>
             )}
           </>
@@ -98,4 +117,4 @@ const LayoutHeader = ({ customHeaderComponents, breadcrumbs = [], headerBorder =
     </div>
   )
 }
-export default observer(LayoutHeader)
+export default LayoutHeader

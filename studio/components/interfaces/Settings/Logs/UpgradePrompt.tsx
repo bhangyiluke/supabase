@@ -44,6 +44,10 @@ const UpgradePrompt: React.FC<Props> = ({ show, setShowUpgradePrompt }) => {
                   <p className="w-[60%] text-sm">{TIER_QUERY_LIMITS.PRO.text}</p>
                 </div>
                 <div className="flex items-center px-4 py-1">
+                  <p className="w-[40%] text-sm">Team</p>
+                  <p className="w-[60%] text-sm">{TIER_QUERY_LIMITS.TEAM.text}</p>
+                </div>
+                <div className="flex items-center px-4 py-1">
                   <p className="w-[40%] text-sm">Enterprise</p>
                   <p className="w-[60%] text-sm">{TIER_QUERY_LIMITS.ENTERPRISE.text}</p>
                 </div>
@@ -53,13 +57,14 @@ const UpgradePrompt: React.FC<Props> = ({ show, setShowUpgradePrompt }) => {
         </Modal.Content>
         <Modal.Separator />
         <Modal.Content>
-          <div className="flex justify-between">
+          <div className="flex justify-end gap-3">
             <Button type="default" onClick={() => setShowUpgradePrompt(false)}>
               Close
             </Button>
-
-            <Link href={`/project/${ref}/settings/billing/subscription`}>
-              <Button size="tiny">Upgrade</Button>
+            <Link href={`/project/${ref}/settings/billing/subscription`} passHref>
+              <a>
+                <Button size="tiny">Upgrade</Button>
+              </a>
             </Link>
           </div>
         </Modal.Content>

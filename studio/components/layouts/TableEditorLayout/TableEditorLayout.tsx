@@ -1,70 +1,119 @@
-import { FC, ReactNode, useState, useEffect } from 'react'
-import { isUndefined } from 'lodash'
-import { observer } from 'mobx-react-lite'
-import { PostgresTable } from '@supabase/postgres-meta'
 import { PermissionAction } from '@supabase/shared-types/out/constants'
+import { noop } from 'lodash'
+import { observer } from 'mobx-react-lite'
+import { useRouter } from 'next/router'
+import { PropsWithChildren, useEffect } from 'react'
 
-import { checkPermissions, useStore } from 'hooks'
-import Error from 'components/ui/Error'
-import ProjectLayout from '../ProjectLayout/ProjectLayout'
-import TableEditorMenu from './TableEditorMenu'
+import { useParams } from 'common/hooks'
+import Connecting from 'components/ui/Loading/Loading'
 import NoPermission from 'components/ui/NoPermission'
+import { ENTITY_TYPE } from 'data/entity-types/entity-type-constants'
+import { Entity } from 'data/entity-types/entity-type-query'
+import { useCheckPermissions, useSelectedProject, useStore } from 'hooks'
+import useEntityType from 'hooks/misc/useEntityType'
+import useLatest from 'hooks/misc/useLatest'
+import { useIsTableLoaded, useTableEditorStateSnapshot } from 'state/table-editor'
+import ProjectLayout from '../'
+import useTableRowsPrefetchWrapper from './TableEditorLayout.utils'
+import TableEditorMenu from './TableEditorMenu'
 
-interface Props {
+export interface TableEditorLayoutProps {
   selectedSchema?: string
+  selectedTable?: string
   onSelectSchema: (schema: string) => void
   onAddTable: () => void
-  onEditTable: (table: PostgresTable) => void
-  onDeleteTable: (table: PostgresTable) => void
-  onDuplicateTable: (table: PostgresTable) => void
-  children: ReactNode
+  onEditTable: (table: Entity) => void
+  onDeleteTable: (table: Entity) => void
+  onDuplicateTable: (table: Entity) => void
 }
 
-const TableEditorLayout: FC<Props> = ({
+const TableEditorLayout = ({
   selectedSchema,
-  onSelectSchema = () => {},
-  onAddTable = () => {},
-  onEditTable = () => {},
-  onDeleteTable = () => {},
-  onDuplicateTable = () => {},
+  selectedTable,
+  onSelectSchema = noop,
+  onAddTable = noop,
+  onEditTable = noop,
+  onDeleteTable = noop,
+  onDuplicateTable = noop,
   children,
-}) => {
-  const { vault, meta, ui } = useStore()
-  const { isInitialized, isLoading, error } = meta.tables
+}: PropsWithChildren<TableEditorLayoutProps>) => {
+  const { ui, vault, meta } = useStore()
+  const selectedProject = useSelectedProject()
+  const router = useRouter()
+  const { ref, id: _id } = useParams()
+  const id = _id ? Number(_id) : undefined
 
-  const [loaded, setLoaded] = useState<boolean>(isInitialized)
-  const canReadTables = checkPermissions(PermissionAction.TENANT_SQL_ADMIN_READ, 'tables')
+  const snap = useTableEditorStateSnapshot()
+  const canReadTables = useCheckPermissions(PermissionAction.TENANT_SQL_ADMIN_READ, 'tables')
 
   const vaultExtension = meta.extensions.byId('supabase_vault')
-  const isEnabled = vaultExtension !== undefined && vaultExtension?.installed_version !== null
+  const isVaultEnabled = vaultExtension !== undefined && vaultExtension.installed_version !== null
 
   useEffect(() => {
-    if (ui.selectedProject?.ref) {
+    if (ui.selectedProjectRef) {
       meta.schemas.load()
-      meta.tables.load()
       meta.types.load()
       meta.policies.load()
       meta.publications.load()
       meta.extensions.load()
-      meta.foreignTables.load()
     }
-  }, [ui.selectedProject?.ref])
+  }, [ui.selectedProjectRef])
+
+  const isLoaded = useIsTableLoaded(ref, id)
+
+  const entity = useEntityType(id, function onNotFound(id) {
+    if (ref) snap.addLoadedId(ref, id)
+  })
+
+  const prefetch = useLatest(useTableRowsPrefetchWrapper())
 
   useEffect(() => {
-    if (isEnabled) {
+    let mounted = true
+
+    function loadTable() {
+      if (entity?.type) {
+        switch (entity.type) {
+          case ENTITY_TYPE.MATERIALIZED_VIEW:
+            return meta.materializedViews.loadById(entity.id)
+
+          case ENTITY_TYPE.VIEW:
+            return meta.views.loadById(entity.id)
+
+          case ENTITY_TYPE.FOREIGN_TABLE:
+            return meta.foreignTables.loadById(entity.id)
+
+          default:
+            return meta.tables.loadById(entity.id)
+        }
+      }
+    }
+
+    loadTable()
+      ?.then(async (entity: any) => {
+        await prefetch.current(entity)
+        return entity
+      })
+      .then((entity: any) => {
+        if (mounted && ref) {
+          snap.addLoadedId(ref, entity.id)
+        }
+      })
+      .catch(() => {
+        if (mounted && entity?.id && ref) {
+          snap.addLoadedId(ref, entity.id)
+        }
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [entity?.id])
+
+  useEffect(() => {
+    if (isVaultEnabled) {
       vault.load()
     }
-  }, [ui.selectedProject?.ref, isEnabled])
-
-  useEffect(() => {
-    let cancel = false
-    if (!isLoading && !loaded) {
-      if (!cancel) setLoaded(true)
-    }
-    return () => {
-      cancel = true
-    }
-  }, [isLoading])
+  }, [selectedProject?.ref, isVaultEnabled])
 
   if (!canReadTables) {
     return (
@@ -74,18 +123,10 @@ const TableEditorLayout: FC<Props> = ({
     )
   }
 
-  if (error) {
-    return (
-      <ProjectLayout>
-        <Error error={error} />
-      </ProjectLayout>
-    )
-  }
-
   return (
     <ProjectLayout
-      isLoading={!loaded || isUndefined(selectedSchema)}
       product="Table editor"
+      selectedTable={selectedTable}
       productMenu={
         <TableEditorMenu
           selectedSchema={selectedSchema}
@@ -97,7 +138,7 @@ const TableEditorLayout: FC<Props> = ({
         />
       }
     >
-      {children}
+      {router.isReady && id !== undefined ? isLoaded ? children : <Connecting /> : children}
     </ProjectLayout>
   )
 }

@@ -47,8 +47,8 @@ supabase: Client = create_client(url, key)
     dart: {
       language: 'dart',
       code: `
-final supabaseUrl = '${endpoint}'
-final supabaseKey = String.fromEnvironment('SUPABASE_KEY')
+const supabaseUrl = '${endpoint}';
+const supabaseKey = String.fromEnvironment('SUPABASE_KEY');
 
 Future<void> main() async {
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
@@ -162,7 +162,7 @@ const ${listenerName} = supabase.channel('custom-all-channel')
       code: `
 const ${listenerName} = supabase.channel('custom-insert-channel')
   .on(
-    'postgres_changes', 
+    'postgres_changes',
     { event: 'INSERT', schema: 'public', table: '${resourceId}' },
     (payload) => {
       console.log('Change received!', payload)
@@ -378,6 +378,7 @@ const { data, error } = await supabase
   .insert([
     { some_column: 'someValue', other_column: 'otherValue' },
   ])
+  .select()
 `,
     },
   }),
@@ -402,6 +403,7 @@ const { data, error } = await supabase
     { some_column: 'someValue' },
     { some_column: 'otherValue' },
   ])
+  .select()
 `,
     },
   }),
@@ -423,7 +425,8 @@ curl -X POST '${endpoint}/rest/v1/${resourceId}' \\
       code: `
 const { data, error } = await supabase
   .from('${resourceId}')
-  .insert([{ some_column: 'someValue' }], { upsert: true })
+  .upsert({ some_column: 'someValue' })
+  .select()
 `,
     },
   }),
@@ -447,6 +450,7 @@ const { data, error } = await supabase
   .from('${resourceId}')
   .update({ other_column: 'otherValue' })
   .eq('some_column', 'someValue')
+  .select()
 `,
     },
   }),
@@ -463,7 +467,7 @@ curl -X DELETE '${endpoint}/rest/v1/${resourceId}?some_column=eq.someValue' \\
     js: {
       language: 'js',
       code: `
-const { data, error } = await supabase
+const { error } = await supabase
   .from('${resourceId}')
   .delete()
   .eq('some_column', 'someValue')
@@ -604,9 +608,10 @@ curl -X POST '${endpoint}/auth/v1/verify' \\
     js: {
       language: 'js',
       code: `
-let { data, error } = await supabase.auth.verifyOTP({
+let { data, error } = await supabase.auth.verifyOtp({
   phone: '+13334445555',
-  token: '123456'
+  token: '123456',
+  type: 'sms'
 })
 `,
     },
@@ -633,7 +638,7 @@ let { data, error } = await supabase.auth.api.inviteUserByEmail('someone@email.c
     },
   }),
   authThirdPartyLogin: (endpoint, apiKey) => ({
-    title: '',
+    title: 'Third Party Login',
     bash: {
       language: 'bash',
       code: ``,
@@ -680,7 +685,7 @@ const { data: { user } } = await supabase.auth.getUser()
     js: {
       language: 'js',
       code: `
-let { data, error } = await supabase.auth.api.resetPasswordForEmail(email)
+let { data, error } = await supabase.auth.resetPasswordForEmail(email)
 `,
     },
   }),

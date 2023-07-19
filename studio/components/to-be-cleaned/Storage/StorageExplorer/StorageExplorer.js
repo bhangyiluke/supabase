@@ -1,77 +1,69 @@
-import { useEffect, useState, useRef } from 'react'
+import { compact, get, isEmpty, uniqBy } from 'lodash'
 import { observer } from 'mobx-react-lite'
-import { compact, find, isEmpty, uniqBy, get } from 'lodash'
+import { useEffect, useRef, useState } from 'react'
 
+import { useParams } from 'common'
 import { useStorageStore } from 'localStores/storageExplorer/StorageExplorerStore'
 import { STORAGE_ROW_TYPES } from '../Storage.constants'
-
+import ConfirmDeleteModal from './ConfirmDeleteModal'
+import CustomExpiryModal from './CustomExpiryModal'
 import FileExplorer from './FileExplorer'
 import FileExplorerHeader from './FileExplorerHeader'
 import FileExplorerHeaderSelection from './FileExplorerHeaderSelection'
-import ConfirmDeleteModal from './ConfirmDeleteModal'
 import MoveItemsModal from './MoveItemsModal'
 import PreviewPane from './PreviewPane'
+import { useCustomDomainsQuery } from 'data/custom-domains/custom-domains-query'
+import { useProjectSettingsQuery } from 'data/config/project-settings-query'
+import { DEFAULT_PROJECT_API_SERVICE_ID } from 'lib/constants'
+import { copyToClipboard } from 'lib/helpers'
+import { useStore } from 'hooks'
 
 const StorageExplorer = observer(({ bucket }) => {
   const storageExplorerStore = useStorageStore()
   const {
     columns,
     selectedFilePreview,
-    setFilePreview,
     closeFilePreview,
     selectedItems,
     setSelectedItems,
     clearSelectedItems,
     selectedItemsToDelete,
-    setSelectedItemsToDelete,
     clearSelectedItemsToDelete,
     openedFolders,
-    pushOpenedFolderAtIndex,
-    clearOpenedFolders,
-    popColumn,
     popColumnAtIndex,
-    popOpenedFolders,
     popOpenedFoldersAtIndex,
-    setSelectedItemToRename,
     selectedItemsToMove,
-    setSelectedItemsToMove,
     clearSelectedItemsToMove,
     view,
-    setView,
-    sortBy,
-    setSortBy,
-    sortByOrder,
-    setSortByOrder,
     currentBucketName,
-    copyFileURLToClipboard,
     openBucket,
 
     loadExplorerPreferences,
-    addNewFolderPlaceholder,
-    addNewFolder,
     fetchFolderContents,
     fetchMoreFolderContents,
-    fetchFoldersByPath,
-    renameFolder,
     deleteFolder,
     uploadFiles,
     deleteFiles,
-    downloadFile,
-    downloadSelectedFiles,
-    renameFile,
     moveFiles,
   } = storageExplorerStore
 
   const storageExplorerRef = useRef(null)
-  const [loading, setLoading] = useState({ isLoading: false, message: '' })
+
+  const { ui } = useStore()
+  const { ref } = useParams()
+  const { data: customDomainData } = useCustomDomainsQuery({ projectRef: ref })
+  const { data: projectSettings } = useProjectSettingsQuery({ projectRef: ref })
+  const apiService = (projectSettings?.services ?? []).find(
+    (x) => x.app.id == DEFAULT_PROJECT_API_SERVICE_ID
+  )
+  const apiConfig = apiService?.app_config
+  const apiUrl = `${apiConfig?.protocol ?? 'https'}://${apiConfig?.endpoint ?? '-'}`
 
   // This state exists outside of the header because FileExplorerColumn needs to listen to these as well
   // I'm keeping them outside of the mobx store as I feel that the store should contain persistent data
   // Things like showing results from a search filter is "temporary", hence we use react state to manage
-  const [isSearching, setIsSearching] = useState(false)
   const [itemSearchString, setItemSearchString] = useState('')
 
-  const previewPaneWidth = 450
   // Requires a fixed height to ensure that explorer is constrained to the viewport
   const fileExplorerHeight = window.innerHeight - 122
 
@@ -110,51 +102,15 @@ const StorageExplorer = observer(({ bucket }) => {
     openBucket(bucket)
   }, [bucket])
 
-  /** Navigation methods */
-
-  const onSelectFile = async (columnIndex, file) => {
-    popColumnAtIndex(columnIndex)
-    popOpenedFoldersAtIndex(columnIndex - 1)
-    setFilePreview(file)
-    clearSelectedItems()
-  }
-
-  const onSelectFolder = async (columnIndex, folder) => {
-    closeFilePreview()
-    popOpenedFoldersAtIndex(columnIndex - 1)
-    pushOpenedFolderAtIndex(folder, columnIndex)
-    await fetchFolderContents(folder.id, folder.name, columnIndex)
-  }
-
-  const onSetPathByString = async (paths) => {
-    if (paths.length === 0) {
-      popColumnAtIndex(0)
-      clearOpenedFolders()
-      closeFilePreview()
-    } else {
-      const pathString = paths.join('/')
-      setLoading({ isLoading: true, message: `Navigating to ${pathString}...` })
-      await fetchFoldersByPath(paths)
-      setLoading({ isLoading: false, message: '' })
-    }
-  }
-
   /** Checkbox selection methods */
   /** [Joshen] We'll only support checkbox selection for files ONLY */
 
-  const onCheckItem = (item) => {
-    if (find(selectedItems, item) === undefined) {
-      setSelectedItems(selectedItems.concat([item]))
-    } else {
-      setSelectedItems(selectedItems.filter((selectedItem) => item.id !== selectedItem.id))
-    }
-    closeFilePreview()
-  }
-
   const onSelectAllItemsInColumn = (columnIndex) => {
-    const columnFiles = columns[columnIndex].items.filter(
-      (item) => item.type === STORAGE_ROW_TYPES.FILE
-    )
+    const columnFiles = columns[columnIndex].items
+      .filter((item) => item.type === STORAGE_ROW_TYPES.FILE)
+      .map((item) => {
+        return { ...item, columnIndex }
+      })
     const columnFilesId = compact(columnFiles.map((item) => item.id))
     const selectedItemsFromColumn = selectedItems.filter((item) => columnFilesId.includes(item.id))
 
@@ -170,54 +126,6 @@ const StorageExplorer = observer(({ bucket }) => {
   }
 
   /** File manipulation methods */
-
-  const onSelectCreateFolder = (columnIndex = -1) => {
-    addNewFolderPlaceholder(columnIndex)
-  }
-
-  const onCreateFolder = (folderName, columnIndex) => {
-    addNewFolder(folderName, columnIndex)
-  }
-
-  const onRenameFolder = (folder, newName, columnIndex) => {
-    renameFolder(folder, newName, columnIndex)
-  }
-
-  const onSelectItemsDelete = () => {
-    setSelectedItemsToDelete(selectedItems)
-  }
-
-  const onSelectItemDelete = (file) => {
-    setSelectedItemsToDelete([file])
-  }
-
-  const onSelectItemRename = (file) => {
-    setSelectedItemToRename(file)
-  }
-
-  const onSelectItemsMove = () => {
-    setSelectedItemsToMove(selectedItems)
-  }
-
-  const onSelectItemMove = (file) => {
-    setSelectedItemsToMove([file])
-  }
-
-  const onSelectItemsDownload = async () => {
-    await downloadSelectedFiles()
-  }
-
-  const onCopyFileURL = async (file) => {
-    await copyFileURLToClipboard(file)
-  }
-
-  const onDownloadFile = async (file) => {
-    await downloadFile(file)
-  }
-
-  const onRenameFile = async (file, newName, columnIndex) => {
-    await renameFile(file, newName, columnIndex)
-  }
 
   const onFilesUpload = async (event, columnIndex = -1) => {
     event.persist()
@@ -250,17 +158,6 @@ const StorageExplorer = observer(({ bucket }) => {
   }
 
   /** Misc UI methods */
-
-  const onSelectBack = () => {
-    popColumn()
-    popOpenedFolders()
-    closeFilePreview()
-  }
-
-  const onSelectBreadcrumb = (columnIndex) => {
-    popColumnAtIndex(columnIndex)
-  }
-
   const onSelectColumnEmptySpace = (columnIndex) => {
     popColumnAtIndex(columnIndex)
     popOpenedFoldersAtIndex(columnIndex - 1)
@@ -268,56 +165,36 @@ const StorageExplorer = observer(({ bucket }) => {
     clearSelectedItems()
   }
 
-  const onChangeView = (view) => setView(view)
-
-  const onChangeSortBy = (sortBy) => setSortBy(sortBy)
-
-  const onChangeSortByOrder = (sortByOrder) => setSortByOrder(sortByOrder)
-
-  const onToggleSearch = (bool) => {
-    setIsSearching(bool)
-    if (bool === false) {
-      setItemSearchString('')
-    }
+  const onCopyUrl = (name, url) => {
+    const formattedUrl =
+      customDomainData?.customDomain?.status === 'active'
+        ? url.replace(apiUrl, `https://${customDomainData.customDomain.hostname}`)
+        : url
+    copyToClipboard(formattedUrl, () => {
+      ui.setNotification({
+        category: 'success',
+        message: `Copied URL for ${name} to clipboard.`,
+        duration: 4000,
+      })
+    })
   }
 
   return (
     <div
       ref={storageExplorerRef}
       className="
-        bg-bg-primary-light dark:bg-bg-primary-dark
+        bg-scale-200
         border-panel-border-light dark:border-panel-border-dark flex
         h-full w-full flex-col rounded-md border"
     >
       {selectedItems.length === 0 ? (
         <FileExplorerHeader
-          view={view}
-          sortBy={sortBy}
-          sortByOrder={sortByOrder}
-          loading={loading}
-          breadcrumbs={columns.map((column) => column.name)}
-          backDisabled={columns.length <= 1}
-          isSearching={isSearching}
           itemSearchString={itemSearchString}
           setItemSearchString={setItemSearchString}
-          onChangeView={onChangeView}
-          onChangeSortBy={onChangeSortBy}
-          onChangeSortByOrder={onChangeSortByOrder}
-          onToggleSearch={onToggleSearch}
           onFilesUpload={onFilesUpload}
-          onSelectBack={onSelectBack}
-          onSelectCreateFolder={onSelectCreateFolder}
-          onSetPathByString={onSetPathByString}
-          onSelectBreadcrumb={onSelectBreadcrumb}
         />
       ) : (
-        <FileExplorerHeaderSelection
-          selectedItems={selectedItems}
-          onSelectItemsDownload={onSelectItemsDownload}
-          onSelectItemsDelete={onSelectItemsDelete}
-          onSelectItemsMove={onSelectItemsMove}
-          onUnselectAllItems={clearSelectedItems}
-        />
+        <FileExplorerHeaderSelection />
       )}
       <div className="flex h-full" style={{ height: fileExplorerHeight }}>
         <FileExplorer
@@ -326,36 +203,15 @@ const StorageExplorer = observer(({ bucket }) => {
           openedFolders={openedFolders}
           selectedItems={selectedItems}
           selectedFilePreview={selectedFilePreview}
-          onCheckItem={onCheckItem}
-          onSelectFile={onSelectFile}
-          onRenameFile={onRenameFile}
           onFilesUpload={onFilesUpload}
-          onCopyFileURL={onCopyFileURL}
-          onDownloadFile={onDownloadFile}
-          onSelectFolder={onSelectFolder}
-          onRenameFolder={onRenameFolder}
-          onCreateFolder={onCreateFolder}
-          onSelectItemDelete={onSelectItemDelete}
-          onSelectItemRename={onSelectItemRename}
-          onSelectItemMove={onSelectItemMove}
           onSelectAllItemsInColumn={onSelectAllItemsInColumn}
           onSelectColumnEmptySpace={onSelectColumnEmptySpace}
-          onSelectCreateFolder={onSelectCreateFolder}
-          onChangeView={onChangeView}
-          onChangeSortBy={onChangeSortBy}
-          onChangeSortByOrder={onChangeSortByOrder}
           onColumnLoadMore={(index, column) =>
             fetchMoreFolderContents(index, column, itemSearchString)
           }
+          onCopyUrl={onCopyUrl}
         />
-        <PreviewPane
-          isOpen={!isEmpty(selectedFilePreview)}
-          file={selectedFilePreview}
-          width={previewPaneWidth}
-          onCopyFileURL={onCopyFileURL}
-          onSelectFileDelete={onSelectItemDelete}
-          onClosePreviewPane={closeFilePreview}
-        />
+        <PreviewPane onCopyUrl={onCopyUrl} />
       </div>
       <ConfirmDeleteModal
         visible={selectedItemsToDelete.length > 0}
@@ -370,6 +226,7 @@ const StorageExplorer = observer(({ bucket }) => {
         onSelectCancel={clearSelectedItemsToMove}
         onSelectMove={onMoveSelectedFiles}
       />
+      <CustomExpiryModal onCopyUrl={onCopyUrl} />
     </div>
   )
 })

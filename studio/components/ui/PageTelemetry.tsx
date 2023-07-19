@@ -1,38 +1,44 @@
-import { useStore } from 'hooks'
+import { useParams, useTelemetryProps } from 'common'
+import { useSelectedOrganization } from 'hooks'
 import { post } from 'lib/common/fetch'
 import { API_URL, IS_PLATFORM } from 'lib/constants'
 import { observer } from 'mobx-react-lite'
 import { useRouter } from 'next/router'
 import { FC, useEffect } from 'react'
-import { User } from 'types'
 
 const PageTelemetry: FC = ({ children }) => {
   const router = useRouter()
-  const { ui } = useStore()
-  const { profile } = ui
+  const { ref } = useParams()
+  const telemetryProps = useTelemetryProps()
+  const selectedOrganization = useSelectedOrganization()
 
   useEffect(() => {
-    function handleRouteChange() {
-      handlePageTelemetry(profile)
+    function handleRouteChange(url: string) {
+      handlePageTelemetry(url)
     }
+
     // Listen for page changes after a navigation or when the query changes
     router.events.on('routeChangeComplete', handleRouteChange)
     return () => {
       router.events.off('routeChangeComplete', handleRouteChange)
     }
-  }, [router.events, profile])
+  }, [router])
 
   useEffect(() => {
-    /**
-     * Send page telemetry on first page load
-     * if there asPath is defined, then this isn't needed
-     */
-    if (router.route === '/' && router.asPath === '/') {
-      handlePageTelemetry(profile)
+    // Send page telemetry on first page load
+    // Waiting for router ready before sending page_view
+    // if not the path will be dynamic route instead of the browser url
+    if (router.isReady) {
+      handlePageTelemetry(router.asPath)
     }
-  }, [])
+  }, [router.isReady])
 
-  const handlePageTelemetry = (profile?: User) => {
+  /**
+   * send page_view event
+   *
+   * @param route: the browser url
+   * */
+  const handlePageTelemetry = async (route: string) => {
     if (IS_PLATFORM) {
       /**
        * Get referrer from browser
@@ -41,13 +47,24 @@ const PageTelemetry: FC = ({ children }) => {
 
       /**
        * Send page telemetry
-       *
-       * TODO: document.title is lagging behind routeChangeComplete
-       * that means the page title is the previous one instead of the new page title
        */
       post(`${API_URL}/telemetry/page`, {
         referrer: referrer,
         title: document.title,
+        route,
+        ga: {
+          screen_resolution: telemetryProps?.screenResolution,
+          language: telemetryProps?.language,
+        },
+      })
+
+      post(`${API_URL}/telemetry/pageview`, {
+        ...(ref && { projectRef: ref }),
+        ...(selectedOrganization && { orgSlug: selectedOrganization.slug }),
+        referrer: referrer,
+        title: document.title,
+        path: router.route,
+        location: router.asPath,
       })
     }
   }

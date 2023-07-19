@@ -1,4 +1,4 @@
-export type Wrapper = {
+export type WrapperMeta = {
   name: string
   handlerName: string
   validatorName: string
@@ -22,23 +22,36 @@ export type ServerOption = {
 }
 
 export type Server = {
-  name: string
   options: ServerOption[]
 }
 
-export type TableOption = {
-  name: string
-  defaultValue?: string
-  editable: boolean
-  required: boolean
-  label?: string
-  placeholder?: string
-}
+export type TableOption =
+  | {
+      name: string
+      defaultValue?: string
+      editable: boolean
+      required: boolean
+      label?: string
+      placeholder?: string
+      type: 'text'
+    }
+  | {
+      name: string
+      defaultValue?: string
+      editable: boolean
+      required: boolean
+      label?: string
+      type: 'select'
+      options: {
+        label: string
+        value: string
+      }[]
+    }
 
 export type Table = {
   label: string
   description?: string
-  availableColumns: AvailableColumn[]
+  availableColumns?: AvailableColumn[]
   options: TableOption[]
 }
 

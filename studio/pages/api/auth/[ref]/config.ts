@@ -74,6 +74,9 @@ const handleGetAll = async (req: NextApiRequest, res: NextApiResponse) => {
     EXTERNAL_GOOGLE_ENABLED: false,
     EXTERNAL_GOOGLE_CLIENT_ID: null,
     EXTERNAL_GOOGLE_SECRET: null,
+    EXTERNAL_KAKAO_ENABLED: false,
+    EXTERNAL_KAKAO_CLIENT_ID: null,
+    EXTERNAL_KAKAO_SECRET: null,
     EXTERNAL_KEYCLOAK_ENABLED: false,
     EXTERNAL_KEYCLOAK_CLIENT_ID: null,
     EXTERNAL_KEYCLOAK_SECRET: null,
@@ -103,7 +106,6 @@ const handleGetAll = async (req: NextApiRequest, res: NextApiResponse) => {
     EXTERNAL_ZOOM_ENABLED: false,
     EXTERNAL_ZOOM_CLIENT_ID: null,
     EXTERNAL_ZOOM_SECRET: null,
-
     MAILER_SUBJECTS_INVITE: 'You have been invited',
     MAILER_SUBJECTS_CONFIRMATION: 'Confirm Your Signup',
     MAILER_SUBJECTS_RECOVERY: 'Reset Your Password',
@@ -114,7 +116,7 @@ const handleGetAll = async (req: NextApiRequest, res: NextApiResponse) => {
       '<h2>You have been invited</h2>\n\n<p>You have been invited to create a user on {{ .SiteURL }}. Follow this link to accept the invite:</p>\n<p><a href="{{ .ConfirmationURL }}">Accept the invite</a></p>',
     MAILER_TEMPLATES_CONFIRMATION: null,
     MAILER_TEMPLATES_CONFIRMATION_CONTENT:
-      '<h2>Confirm your signup</h2>\n\n<p>Follow this link to confirm your user:</p>\n<p><a href="{{ .ConfirmationURL }}">Confirm your mail</a></p>',
+      '<h2>Confirm your email</h2>\n\n<p>Follow this link to confirm your email:</p>\n\n<p><a href="{{ .ConfirmationURL }}">Confirm your email address</a></p>',
     MAILER_TEMPLATES_RECOVERY: null,
     MAILER_TEMPLATES_RECOVERY_CONTENT:
       '<h2>Reset Password</h2>\n\n<p>Follow this link to reset the password for your user:</p>\n<p><a href="{{ .ConfirmationURL }}">Reset Password</a></p>',
@@ -134,6 +136,9 @@ const handleGetAll = async (req: NextApiRequest, res: NextApiResponse) => {
     SMS_TWILIO_ACCOUNT_SID: null,
     SMS_TWILIO_AUTH_TOKEN: null,
     SMS_TWILIO_MESSAGE_SERVICE_SID: null,
+    SMS_TWILIO_VERIFY_ACCOUNT_SID: null,
+    SMS_TWILIO_VERIFY_AUTH_TOKEN: null,
+    SMS_TWILIO_VERIFY_MESSAGE_SERVICE_SID: null,
     SMS_TEMPLATE: 'Your code is {{ .Code }}',
     SECURITY_CAPTCHA_ENABLED: false,
     SECURITY_CAPTCHA_PROVIDER: 'hcaptcha',

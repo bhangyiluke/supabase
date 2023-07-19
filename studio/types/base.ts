@@ -8,6 +8,8 @@ export interface Organization {
   billing_email: string
   is_owner?: boolean
   stripe_customer_id?: string
+  opt_in_tags: string[]
+  subscription_id?: string
 }
 
 export interface ProjectBase {
@@ -28,8 +30,6 @@ export interface Project extends ProjectBase {
   dbVersion?: string
   kpsVersion?: string
   restUrl?: string
-  // store subscription tier products.metadata.supabase_prod_id
-  subscription_tier?: string
 
   /**
    * postgrestStatus is available on client side only.
@@ -41,7 +41,7 @@ export interface Project extends ProjectBase {
 
 export interface User {
   id: number
-  mobile: string
+  mobile: string | null
   primary_email: string
   username: string
   first_name: string
@@ -77,12 +77,17 @@ export interface Permission {
   resources: string[]
 }
 
-export interface ResponseError {
-  message: string
-}
-
 export interface ResponseFailure {
   error: ResponseError
 }
 
+// [Joshen] This should ideally be | but not changing now as its gonna cause a lot of build errors
 export type SupaResponse<T> = T & ResponseFailure
+// [Joshen] Use this for now, eventually deprecate SupaResponse<T> above
+export type SupaResponseV2<T> = T | ResponseFailure
+
+export interface ResponseError {
+  code?: number
+  message: string
+  requestId?: string
+}
