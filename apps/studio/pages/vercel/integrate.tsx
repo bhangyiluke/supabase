@@ -1,12 +1,10 @@
-import Divider from 'components/ui/Divider'
 import { makeAutoObservable, runInAction } from 'mobx'
 import { observer, useLocalObservable } from 'mobx-react-lite'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { ChangeEvent, createContext, useContext, useEffect, useState } from 'react'
-import { toast } from 'react-hot-toast'
+import { toast } from 'sonner'
 
-import { Dictionary } from 'types'
 import VercelIntegrationLayout from 'components/layouts/VercelIntegrationLayout'
 import {
   createVercelEnv,
@@ -15,17 +13,21 @@ import {
   prepareVercelEvns,
 } from 'components/to-be-cleaned/Integration/Vercel.utils'
 import { databaseIcon, vercelIcon } from 'components/to-be-cleaned/ListIcons'
-import Loading from 'components/ui/Loading'
+import { Loading } from 'components/ui/Loading'
 import { useProjectsQuery } from 'data/projects/projects-query'
-import { withAuth } from 'hooks'
+import { withAuth } from 'hooks/misc/withAuth'
 import { get } from 'lib/common/fetch'
+import { get as getV2 } from 'data/fetchers'
 import { API_URL } from 'lib/constants'
 import {
   INTEGRATION_ENVS_ALIAS,
   VERCEL_DEFAULT_EXTERNAL_ID,
   VERCEL_INTEGRATION_CONFIGS,
 } from 'lib/vercelConfigs'
-import { Button, IconChevronRight, IconPlusCircle, IconX, Listbox, Select } from 'ui'
+import type { Dictionary } from 'types'
+import { Button, Listbox, Select, Separator } from 'ui'
+import { PlusCircle, ChevronRight, X } from 'lucide-react'
+import { getAPIKeys } from 'data/config/project-settings-v2-query'
 
 interface IVercelIntegrationStore {
   code: string
@@ -351,9 +353,22 @@ const ProjectLinks = observer(() => {
           continue
         }
         // If not, pull project detail info
-        const projectDetails = await get(`${API_URL}/props/project/${item.supabaseProjectRef}/api`)
-        if (projectDetails.error) {
-          console.error('project info error: ', projectDetails.error)
+        if (item.supabaseProjectRef === undefined) {
+          console.error('Project ref is missing')
+          runInAction(() => {
+            item.result = {
+              status: 'fail',
+              message: 'Error: Failed to retrieve project ref',
+            }
+          })
+          continue
+        }
+        const { data: settings, error } = await getV2('/platform/projects/{ref}/settings', {
+          params: { path: { ref: item.supabaseProjectRef } },
+        })
+
+        if (error) {
+          console.error('project info error: ', error)
           runInAction(() => {
             item.result = {
               status: 'fail',
@@ -364,12 +379,12 @@ const ProjectLinks = observer(() => {
         }
 
         // Then create env for vercel project with supabase project
+        const endpoint = `https://${settings.app_config?.endpoint ?? '-'}`
+        const { anonKey, serviceKey } = getAPIKeys(settings)
         const vercelEnvs = prepareVercelEvns(defaultVercelEnvs, {
-          endpoint: `${projectDetails.autoApiService.protocol ?? 'https'}://${
-            projectDetails.autoApiService.endpoint ?? '-'
-          }`,
-          anon_key: projectDetails.autoApiService.defaultApiKey,
-          service_key: projectDetails.autoApiService.serviceApiKey,
+          endpoint,
+          anon_key: anonKey?.api_key ?? '',
+          service_key: serviceKey?.api_key ?? '',
         })
 
         await Promise.allSettled(
@@ -441,7 +456,7 @@ const ProjectLinks = observer(() => {
         <h4 className="text-lg">Link Vercel to Supabase</h4>
         <p>Choose which of your Vercel projects to link to your existing Supabase projects.</p>
       </div>
-      <Divider light />
+      <Separator />
       <div className="space-y-2">
         <div className="flex justify-between">
           <p className="text-foreground-light">Vercel Projects</p>
@@ -449,7 +464,7 @@ const ProjectLinks = observer(() => {
           <p className="text-foreground-light">Supabase Projects</p>
         </div>
         <ProjectLinkList />
-        <Divider light />
+        <Separator />
         <div className="flex justify-end py-4">{displayButton()}</div>
       </div>
     </div>
@@ -489,7 +504,7 @@ const ProjectLinkList = observer(() => {
         ) : (
           <div className="flex items-center space-x-2">
             <Button
-              icon={<IconPlusCircle />}
+              icon={<PlusCircle />}
               type="default"
               onClick={addProjectLink}
               disabled={_store.projectLinkRemaining == 0 || _store.waitingIntegration}
@@ -576,7 +591,7 @@ const ProjectLinkItem = observer(
             </Listbox>
           </div>
           <div className="flex flex-shrink items-center">
-            <IconChevronRight className="text-foreground-light" />
+            <ChevronRight className="text-foreground-light" />
           </div>
           <div className="w-1/2 flex-grow">
             <Listbox
@@ -602,7 +617,7 @@ const ProjectLinkItem = observer(
             <div className="absolute top-[3px] right-[-50px]">
               <Button
                 type="text"
-                icon={<IconX size="small" strokeWidth={2} />}
+                icon={<X size="18" strokeWidth={2} />}
                 onClick={onRemove}
                 disabled={_store.waitingIntegration}
               />
@@ -616,8 +631,8 @@ const ProjectLinkItem = observer(
               result.status === 'waiting'
                 ? 'text-foreground-light'
                 : result.status === 'fail'
-                ? 'text-foreground-light'
-                : 'text-foreground'
+                  ? 'text-foreground-light'
+                  : 'text-foreground'
             }`}
           >
             {result?.message ?? 'Processing...'}

@@ -1,17 +1,16 @@
-import * as Tooltip from '@radix-ui/react-tooltip'
 import { PermissionAction } from '@supabase/shared-types/out/constants'
-import { useParams } from 'common'
 import { sortBy } from 'lodash'
-import { observer } from 'mobx-react-lite'
-import Link from 'next/link'
+import { Loader, Search, X } from 'lucide-react'
 import { Fragment, useEffect, useState } from 'react'
-import { Button, IconExternalLink, IconLoader, IconSearch, IconX, Input, Listbox } from 'ui'
 
+import { useParams } from 'common'
 import { useProjectContext } from 'components/layouts/ProjectLayout/ProjectContext'
-import Divider from 'components/ui/Divider'
+import { ButtonTooltip } from 'components/ui/ButtonTooltip'
+import { DocsButton } from 'components/ui/DocsButton'
 import { useVaultSecretsQuery } from 'data/vault/vault-secrets-query'
-import { useCheckPermissions } from 'hooks'
-import { VaultSecret } from 'types'
+import { useCheckPermissions } from 'hooks/misc/useCheckPermissions'
+import type { VaultSecret } from 'types'
+import { Button, Input, Listbox, Separator } from 'ui'
 import AddNewSecretModal from './AddNewSecretModal'
 import DeleteSecretModal from './DeleteSecretModal'
 import EditSecretModal from './EditSecretModal'
@@ -66,7 +65,7 @@ const SecretsManagement = () => {
               placeholder="Search by name or key ID"
               value={searchValue}
               onChange={(event) => setSearchValue(event.target.value)}
-              icon={<IconSearch strokeWidth={2} size={16} />}
+              icon={<Search strokeWidth={2} size={16} />}
               actions={
                 searchValue.length > 0
                   ? [
@@ -74,7 +73,7 @@ const SecretsManagement = () => {
                         key="clear"
                         size="tiny"
                         type="text"
-                        icon={<IconX />}
+                        icon={<X />}
                         className="px-1"
                         onClick={() => setSearchValue('')}
                       />,
@@ -111,44 +110,23 @@ const SecretsManagement = () => {
               </Listbox>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button asChild type="default" icon={<IconExternalLink strokeWidth={1.5} />}>
-              <Link
-                href="https://supabase.com/docs/guides/database/vault"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Vault Documentation
-              </Link>
-            </Button>
-            <Tooltip.Root delayDuration={0}>
-              <Tooltip.Trigger asChild>
-                <Button
-                  type="primary"
-                  disabled={!canManageSecrets}
-                  onClick={() => setShowAddSecretModal(true)}
-                >
-                  Add new secret
-                </Button>
-              </Tooltip.Trigger>
-              {!canManageSecrets && (
-                <Tooltip.Portal>
-                  <Tooltip.Content side="bottom">
-                    <Tooltip.Arrow className="radix-tooltip-arrow" />
-                    <div
-                      className={[
-                        'rounded bg-alternative py-1 px-2 leading-none shadow',
-                        'border border-background',
-                      ].join(' ')}
-                    >
-                      <span className="text-xs text-foreground">
-                        You need additional permissions to add secrets
-                      </span>
-                    </div>
-                  </Tooltip.Content>
-                </Tooltip.Portal>
-              )}
-            </Tooltip.Root>
+          <div className="flex items-center gap-x-2">
+            <DocsButton href="https://supabase.com/docs/guides/database/vault" />
+            <ButtonTooltip
+              type="primary"
+              disabled={!canManageSecrets}
+              onClick={() => setShowAddSecretModal(true)}
+              tooltip={{
+                content: {
+                  side: 'bottom',
+                  text: !canManageSecrets
+                    ? 'You need additional permissions to add secrets'
+                    : undefined,
+                },
+              }}
+            >
+              Add new secret
+            </ButtonTooltip>
           </div>
         </div>
 
@@ -156,11 +134,7 @@ const SecretsManagement = () => {
         <div className="border border-default rounded">
           {isLoading ? (
             <div className="px-6 py-6 space-x-2 flex items-center justify-center">
-              <IconLoader
-                className="animate-spin text-foreground-light"
-                size={16}
-                strokeWidth={1.5}
-              />
+              <Loader className="animate-spin text-foreground-light" size={16} strokeWidth={1.5} />
               <p className="text-sm text-foreground">Loading secrets from the Vault</p>
             </div>
           ) : (
@@ -173,7 +147,7 @@ const SecretsManagement = () => {
                       onSelectEdit={setSelectedSecretToEdit}
                       onSelectRemove={setSelectedSecretToRemove}
                     />
-                    {idx !== secrets.length - 1 && <Divider light />}
+                    {idx !== secrets.length - 1 && <Separator />}
                   </Fragment>
                 )
               })}
@@ -217,4 +191,4 @@ const SecretsManagement = () => {
   )
 }
 
-export default observer(SecretsManagement)
+export default SecretsManagement

@@ -1,6 +1,12 @@
-import styles from '@ui/layout/ai-icon-animation/ai-icon-animation-style.module.css'
 import { initial, last } from 'lodash'
 import { Dispatch, SetStateAction } from 'react'
+
+import styles from '@ui/layout/ai-icon-animation/ai-icon-animation-style.module.css'
+import { subscriptionHasHipaaAddon } from 'components/interfaces/Billing/Subscription/Subscription.utils'
+import { QueryResponseError } from 'data/sql/execute-sql-mutation'
+import { useOrgSubscriptionQuery } from 'data/subscriptions/org-subscription-query'
+import { useSendEventMutation } from 'data/telemetry/send-event-mutation'
+import { useSelectedOrganization } from 'hooks/misc/useSelectedOrganization'
 import {
   AlertTitle_Shadcn_,
   Alert_Shadcn_,
@@ -10,14 +16,6 @@ import {
   Collapsible_Shadcn_,
   cn,
 } from 'ui'
-
-import { subscriptionHasHipaaAddon } from 'components/interfaces/Billing/Subscription/Subscription.utils'
-import { QueryResponseError } from 'data/sql/execute-sql-mutation'
-import { useOrgSubscriptionQuery } from 'data/subscriptions/org-subscription-query'
-import { useSelectedOrganization } from 'hooks'
-import Telemetry from 'lib/telemetry'
-import { useTelemetryProps } from 'common'
-import { useRouter } from 'next/router'
 
 const QueryError = ({
   error,
@@ -30,15 +28,15 @@ const QueryError = ({
   setOpen: Dispatch<SetStateAction<boolean>>
   onSelectDebug: () => void
 }) => {
-  const formattedError =
-    (error?.formattedError?.split('\n') ?? [])?.filter((x: string) => x.length > 0) ?? []
-
   // Customers on HIPAA plans should not have access to Supabase AI
   const organization = useSelectedOrganization()
   const { data: subscription } = useOrgSubscriptionQuery({ orgSlug: organization?.slug })
   const hasHipaaAddon = subscriptionHasHipaaAddon(subscription)
-  const router = useRouter()
-  const telemetryProps = useTelemetryProps()
+
+  const { mutate: sendEvent } = useSendEventMutation()
+
+  const formattedError =
+    (error?.formattedError?.split('\n') ?? [])?.filter((x: string) => x.length > 0) ?? []
 
   return (
     <div className="flex flex-col gap-y-3 px-5">
@@ -50,9 +48,9 @@ const QueryError = ({
           className="w-5 h-5"
         >
           <path
-            fill-rule="evenodd"
+            fillRule="evenodd"
+            clipRule="evenodd"
             d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
-            clip-rule="evenodd"
           />
         </svg>
         <div className="flex flex-col gap-3">
@@ -67,7 +65,7 @@ const QueryError = ({
             <div className="flex gap-2">
               <CollapsibleTrigger_Shadcn_ asChild>
                 <Button
-                  size={'tiny'}
+                  size="tiny"
                   type="outline"
                   className={cn('group', styles['ai-icon__container--allow-hover-effect'])}
                 >
@@ -76,7 +74,7 @@ const QueryError = ({
               </CollapsibleTrigger_Shadcn_>
               {!hasHipaaAddon && (
                 <Button
-                  size={'tiny'}
+                  size="tiny"
                   type="default"
                   className={cn(
                     'group',
@@ -84,15 +82,11 @@ const QueryError = ({
                   )}
                   onClick={() => {
                     onSelectDebug()
-                    Telemetry.sendEvent(
-                      {
-                        category: 'rls_editor',
-                        action: 'ai_debugger_requested',
-                        label: 'rls-ai-assistant',
-                      },
-                      telemetryProps,
-                      router
-                    )
+                    sendEvent({
+                      category: 'rls_editor',
+                      action: 'ai_debugger_requested',
+                      label: 'rls-ai-assistant',
+                    })
                   }}
                 >
                   Fix with Assistant

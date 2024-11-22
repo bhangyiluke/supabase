@@ -1,6 +1,7 @@
 import { CalculatedColumn, RenderHeaderCellProps } from 'react-data-grid'
 
 export interface Sort {
+  table: string
   column: string
   ascending?: boolean
   nullsFirst?: boolean
@@ -57,6 +58,7 @@ export interface GridForeignKey {
   targetTableName?: string | null
   targetColumnName?: string | null
   deletionAction?: string
+  updateAction?: string
 }
 
 export interface ColumnHeaderProps<R> extends RenderHeaderCellProps<R> {

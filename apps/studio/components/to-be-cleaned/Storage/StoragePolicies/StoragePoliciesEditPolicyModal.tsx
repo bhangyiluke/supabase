@@ -1,20 +1,19 @@
-import { pull } from 'lodash'
+import { noop, pull } from 'lodash'
 import { useEffect, useState } from 'react'
-import { IconChevronLeft, Modal } from 'ui'
+import { toast } from 'sonner'
 
-import { useStore } from 'hooks'
+import { POLICY_MODAL_VIEWS } from 'components/interfaces/Auth/Policies/Policies.constants'
+import PolicySelection from 'components/interfaces/Auth/Policies/PolicySelection'
+import PolicyTemplates from 'components/interfaces/Auth/Policies/PolicyTemplates'
+import { DocsButton } from 'components/ui/DocsButton'
+import { ChevronLeft } from 'lucide-react'
+import { Modal } from 'ui'
 import {
   applyBucketIdToTemplateDefinition,
   createPayloadsForAddPolicy,
   createSQLPolicies,
 } from '../Storage.utils'
 import { STORAGE_POLICY_TEMPLATES } from './StoragePolicies.constants'
-
-import {
-  POLICY_MODAL_VIEWS,
-  PolicySelection,
-  PolicyTemplates,
-} from 'components/interfaces/Auth/Policies'
 import StoragePoliciesEditor from './StoragePoliciesEditor'
 import StoragePoliciesReview from './StoragePoliciesReview'
 
@@ -33,7 +32,6 @@ const StoragePoliciesEditPolicyModal = ({
   onCreatePolicies = () => {},
   onSaveSuccess = () => {},
 }: any) => {
-  const { ui } = useStore()
   const [previousView, setPreviousView] = useState('') // Mainly to decide which view to show when back from templates
   const [view, setView] = useState('')
 
@@ -122,20 +120,14 @@ const StoragePoliciesEditPolicyModal = ({
   const validatePolicyEditorFormFields = () => {
     const { name, definition, allowedOperations } = policyFormFields
     if (name.length === 0) {
-      return ui.setNotification({ category: 'info', message: 'Do give your policy a name' })
+      return toast.error('Please provide a name for your policy')
     }
     if (definition.length === 0) {
       // Will need to figure out how to strip away comments or something
-      return ui.setNotification({
-        category: 'info',
-        message: 'Did you forget to provide a definition for your policy?',
-      })
+      return toast.error('Please provide a definition for your policy')
     }
     if (allowedOperations.length === 0) {
-      return ui.setNotification({
-        category: 'info',
-        message: 'You will need to allow at least one operation in your policy',
-      })
+      return toast.error('Please allow at least one operation in your policy')
     }
 
     const policySQLStatements = createSQLPolicies(bucketName, policyFormFields)
@@ -164,7 +156,7 @@ const StoragePoliciesEditPolicyModal = ({
   const StoragePolicyEditorModalTitle = ({
     view,
     bucketName,
-    onSelectBackFromTemplates = () => {},
+    onSelectBackFromTemplates = noop,
   }: any) => {
     const getTitle = () => {
       if (view === POLICY_MODAL_VIEWS.EDITOR || view === POLICY_MODAL_VIEWS.SELECTION) {
@@ -182,7 +174,7 @@ const StoragePoliciesEditPolicyModal = ({
               onClick={onSelectBackFromTemplates}
               className="cursor-pointer text-foreground-lighter transition-colors hover:text-foreground"
             >
-              <IconChevronLeft strokeWidth={2} size={14} />
+              <ChevronLeft strokeWidth={2} size={14} />
             </span>
             <h4 className="textlg m-0">Select a template to use for your new policy</h4>
           </div>
@@ -190,17 +182,18 @@ const StoragePoliciesEditPolicyModal = ({
       )
     }
     return (
-      <div className="flex items-center space-x-3">
-        <h4 className="m-0 text-lg">{getTitle()}</h4>
+      <div className="w-full flex items-center justify-between gap-x-2 pr-6">
+        <h4 className="m-0 truncate">{getTitle()}</h4>
+        <DocsButton href="https://supabase.com/docs/learn/auth-deep-dive/auth-policies" />
       </div>
     )
   }
 
   return (
     <Modal
-      size={view === POLICY_MODAL_VIEWS.SELECTION ? 'medium' : 'xxlarge'}
-      closable
       hideFooter
+      className="[&>div:first-child]:py-3"
+      size={view === POLICY_MODAL_VIEWS.SELECTION ? 'medium' : 'xxlarge'}
       visible={visible}
       contentStyle={{ padding: 0 }}
       header={[
@@ -219,6 +212,7 @@ const StoragePoliciesEditPolicyModal = ({
             description="PostgreSQL policies control access to your files and folders"
             onViewTemplates={onViewTemplates}
             onViewEditor={() => onViewEditor('new')}
+            showAssistantPreview={false}
           />
         ) : view === POLICY_MODAL_VIEWS.EDITOR ? (
           <StoragePoliciesEditor

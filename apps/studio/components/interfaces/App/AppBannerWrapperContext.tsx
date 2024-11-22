@@ -3,38 +3,45 @@ import { PropsWithChildren, createContext, useContext, useEffect, useState } fro
 
 import { LOCAL_STORAGE_KEYS } from 'lib/constants'
 
-const NOTICE_BANNER_KEY = LOCAL_STORAGE_KEYS.PGBOUNCER_DEPRECATION_WARNING
+const AUTH_SMTP_CHANGES_WARNING_KEY = LOCAL_STORAGE_KEYS.AUTH_SMTP_CHANGES_WARNING
 
-// [Joshen] Update this as and when we need to use the NoticeBanner
+// [Joshen] This file is meant to be dynamic - update this as and when we need to use the NoticeBanner
 
 type AppBannerContextType = {
-  acknowledged: boolean
-  onUpdateAcknowledged: (value: boolean) => void
+  authSmtpBannerAcknowledged: string[]
+  onUpdateAcknowledged: (key: 'auth-smtp', value: boolean | string) => void
 }
 
 const AppBannerContext = createContext<AppBannerContextType>({
-  acknowledged: false,
+  authSmtpBannerAcknowledged: [],
   onUpdateAcknowledged: noop,
 })
 
 export const useAppBannerContext = () => useContext(AppBannerContext)
 
 export const AppBannerContextProvider = ({ children }: PropsWithChildren<{}>) => {
-  const [acknowledged, setAcknowledged] = useState(false)
+  // [Joshen] If project specific, can take a list of refs instead - comma separated strings, no spaces
+  // Otherwise just a boolean will be fine
+  const [authSmtpBannerAcknowledged, setAuthSmtpBannerAcknowledged] = useState<string[]>([])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setAcknowledged(localStorage.getItem(NOTICE_BANNER_KEY) === 'true')
+      const acknowledgedProjectRefs =
+        localStorage.getItem(AUTH_SMTP_CHANGES_WARNING_KEY)?.split(',') ?? []
+      setAuthSmtpBannerAcknowledged(acknowledgedProjectRefs)
     }
   }, [])
 
   const value = {
-    acknowledged,
-    onUpdateAcknowledged: (value: boolean) => {
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(NOTICE_BANNER_KEY, value.toString())
+    authSmtpBannerAcknowledged,
+    onUpdateAcknowledged: (key: 'auth-smtp', value: boolean | string) => {
+      if (key === 'auth-smtp' && typeof value === 'string' && value.length > 0) {
+        const updatedRefs = authSmtpBannerAcknowledged.concat([value])
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(AUTH_SMTP_CHANGES_WARNING_KEY, updatedRefs.join(','))
+        }
+        setAuthSmtpBannerAcknowledged(updatedRefs)
       }
-      setAcknowledged(value)
     },
   }
 
@@ -42,6 +49,6 @@ export const AppBannerContextProvider = ({ children }: PropsWithChildren<{}>) =>
 }
 
 export const useIsNoticeBannerShown = () => {
-  const { acknowledged } = useAppBannerContext()
-  return acknowledged
+  const { authSmtpBannerAcknowledged } = useAppBannerContext()
+  return authSmtpBannerAcknowledged
 }

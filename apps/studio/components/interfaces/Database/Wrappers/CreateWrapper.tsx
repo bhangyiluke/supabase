@@ -1,35 +1,42 @@
 import { PermissionAction } from '@supabase/shared-types/out/constants'
 import { useQueryClient } from '@tanstack/react-query'
 import { isEmpty } from 'lodash'
-import { observer } from 'mobx-react-lite'
+import { ArrowLeft, Edit, Trash } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
-import { useParams } from 'common/hooks'
+import { useParams } from 'common'
 import { useProjectContext } from 'components/layouts/ProjectLayout/ProjectContext'
-import {
-  FormActions,
-  FormPanel,
-  FormsContainer,
-  FormSection,
-  FormSectionContent,
-  FormSectionLabel,
-} from 'components/ui/Forms'
+import { DocsButton } from 'components/ui/DocsButton'
+import { FormActions } from 'components/ui/Forms/FormActions'
+import { FormPanel } from 'components/ui/Forms/FormPanel'
+import { FormSection, FormSectionContent, FormSectionLabel } from 'components/ui/Forms/FormSection'
+import { FormsContainer } from 'components/ui/Forms/FormsContainer'
+import { useDatabaseExtensionsQuery } from 'data/database-extensions/database-extensions-query'
 import { invalidateSchemasQuery } from 'data/database/schemas-query'
 import { useFDWCreateMutation } from 'data/fdw/fdw-create-mutation'
-import { useCheckPermissions, useStore } from 'hooks'
-import { Button, Form, IconArrowLeft, IconEdit, IconExternalLink, IconTrash, Input } from 'ui'
+import { useCheckPermissions } from 'hooks/misc/useCheckPermissions'
+import {
+  AlertDescription_Shadcn_,
+  AlertTitle_Shadcn_,
+  Alert_Shadcn_,
+  Button,
+  Form,
+  Input,
+  WarningIcon,
+  cn,
+} from 'ui'
 import InputField from './InputField'
+import WrapperTableEditor from './WrapperTableEditor'
 import { WRAPPERS } from './Wrappers.constants'
 import { makeValidateRequired } from './Wrappers.utils'
-import WrapperTableEditor from './WrapperTableEditor'
 
 const CreateWrapper = () => {
   const formId = 'create-wrapper-form'
   const router = useRouter()
   const queryClient = useQueryClient()
-  const { ui } = useStore()
   const { ref, type } = useParams()
   const { project } = useProjectContext()
   const canCreateWrapper = useCheckPermissions(PermissionAction.TENANT_SQL_ADMIN_WRITE, 'wrappers')
@@ -41,16 +48,13 @@ const CreateWrapper = () => {
 
   const { mutate: createFDW, isLoading: isCreating } = useFDWCreateMutation({
     onSuccess: () => {
-      ui.setNotification({
-        category: 'success',
-        message: `Successfully created ${wrapperMeta?.label} foreign data wrapper`,
-      })
+      toast.success(`Successfully created ${wrapperMeta?.label} foreign data wrapper`)
       setNewTables([])
 
       const hasNewSchema = newTables.some((table) => table.is_new_schema)
       if (hasNewSchema) invalidateSchemasQuery(queryClient, ref)
 
-      router.push(`/project/${ref}/database/wrappers`)
+      router.push(`/project/${ref}/integrations/wrappers`)
     },
   })
 
@@ -66,6 +70,16 @@ const CreateWrapper = () => {
         }
       : {}
 
+  const { data } = useDatabaseExtensionsQuery({
+    projectRef: project?.ref,
+    connectionString: project?.connectionString,
+  })
+
+  const wrappersExtension = data?.find((ext) => ext.name === 'wrappers')
+
+  const hasRequiredVersion =
+    (wrappersExtension?.installed_version ?? '') >= (wrapperMeta?.minimumExtensionVersion ?? '')
+
   if (wrapperMeta === undefined) {
     return (
       <div className="flex flex-col items-center justify-center w-full h-full space-y-4">
@@ -77,11 +91,14 @@ const CreateWrapper = () => {
           </p>
         </div>
         <Button asChild type="default">
-          <Link href={`/project/${ref}/database/wrappers`}>Head back</Link>
+          <Link href={`/project/${ref}/integrations/wrappers`}>Head back</Link>
         </Button>
       </div>
     )
   }
+
+  const databaseNeedsUpgrading =
+    wrappersExtension?.installed_version !== wrappersExtension?.default_version
 
   const onUpdateTable = (values: any) => {
     setNewTables((prev) => {
@@ -118,32 +135,26 @@ const CreateWrapper = () => {
   }
 
   return (
-    <FormsContainer>
-      <div>
-        <div className="relative flex items-center justify-between mb-6">
-          <div
-            className={[
-              'transition cursor-pointer',
-              'absolute -left-20 top-1 opacity-75 hover:opacity-100',
-            ].join(' ')}
-          >
-            <Link href={`/project/${ref}/database/wrappers`}>
-              <div className="flex items-center space-x-2">
-                <IconArrowLeft strokeWidth={1.5} size={14} />
-                <p className="text-sm">Back</p>
-              </div>
-            </Link>
-          </div>
-          <h3 className="mb-2 text-xl text-foreground">Create a {wrapperMeta.label} Wrapper</h3>
-          <div className="flex items-center space-x-2">
-            <Button asChild type="default" icon={<IconExternalLink strokeWidth={1.5} />}>
-              <Link href={wrapperMeta.docsUrl} target="_blank" rel="noreferrer">
-                Documentation
-              </Link>
-            </Button>
-          </div>
+    <FormsContainer className="[&>div]:space-y-0">
+      <div className="relative flex items-center justify-between mb-6">
+        <div
+          className={cn(
+            'transition cursor-pointer',
+            'absolute -left-20 top-1 opacity-75 hover:opacity-100'
+          )}
+        >
+          <Link href={`/project/${ref}/integrations/wrappers`}>
+            <div className="flex items-center space-x-2">
+              <ArrowLeft strokeWidth={1.5} size={14} />
+              <p className="text-sm">Back</p>
+            </div>
+          </Link>
         </div>
+        <h3 className="mb-2 text-xl text-foreground">Create a {wrapperMeta.label} Wrapper</h3>
+        <DocsButton href={wrapperMeta.docsUrl} />
+      </div>
 
+      {hasRequiredVersion ? (
         <Form id={formId} initialValues={initialValues} onSubmit={onSubmit}>
           {({ handleReset, values, initialValues }: any) => {
             const hasChanges = JSON.stringify(values) !== JSON.stringify(initialValues)
@@ -190,14 +201,16 @@ const CreateWrapper = () => {
                   header={<FormSectionLabel>{wrapperMeta.label} Configuration</FormSectionLabel>}
                 >
                   <FormSectionContent loading={false}>
-                    {wrapperMeta.server.options.map((option) => (
-                      <InputField
-                        key={option.name}
-                        option={option}
-                        loading={false}
-                        error={formErrors[option.name]}
-                      />
-                    ))}
+                    {wrapperMeta.server.options
+                      .filter((option) => !option.hidden)
+                      .map((option) => (
+                        <InputField
+                          key={option.name}
+                          option={option}
+                          loading={false}
+                          error={formErrors[option.name]}
+                        />
+                      ))}
                   </FormSectionContent>
                 </FormSection>
                 <FormSection
@@ -230,7 +243,7 @@ const CreateWrapper = () => {
                                 {table.schema_name}.{table.table_name}
                               </p>
                               <p className="text-sm text-foreground-light">
-                                {wrapperMeta.tables[table.index].label}:{' '}
+                                Columns:{' '}
                                 {table.columns.map((column: any) => column.name).join(', ')}
                               </p>
                             </div>
@@ -238,7 +251,7 @@ const CreateWrapper = () => {
                               <Button
                                 type="default"
                                 className="px-1"
-                                icon={<IconEdit />}
+                                icon={<Edit />}
                                 onClick={() => {
                                   setIsEditingTable(true)
                                   setSelectedTableToEdit({ ...table, tableIndex: i })
@@ -247,7 +260,7 @@ const CreateWrapper = () => {
                               <Button
                                 type="default"
                                 className="px-1"
-                                icon={<IconTrash />}
+                                icon={<Trash />}
                                 onClick={() => {
                                   setNewTables((prev) => prev.filter((_, j) => j !== i))
                                 }}
@@ -273,7 +286,41 @@ const CreateWrapper = () => {
             )
           }}
         </Form>
-      </div>
+      ) : (
+        <Alert_Shadcn_ variant="warning">
+          <WarningIcon />
+          <AlertTitle_Shadcn_>
+            Your extension version is outdated for this wrapper.
+          </AlertTitle_Shadcn_>
+          <AlertDescription_Shadcn_ className="flex flex-col gap-y-2">
+            <p>
+              The {wrapperMeta.label} wrapper requires a minimum extension version of{' '}
+              {wrapperMeta.minimumExtensionVersion}. You have version{' '}
+              {wrappersExtension?.installed_version} installed. Please{' '}
+              {databaseNeedsUpgrading && 'upgrade your database then '}update the extension by
+              disabling and enabling the <code className="text-xs">wrappers</code> extension to
+              create this wrapper.
+            </p>
+            <p className="text-warning">
+              Warning: Before reinstalling the wrapper extension, you must first remove all existing
+              wrappers. Afterward, you can recreate the wrappers.
+            </p>
+          </AlertDescription_Shadcn_>
+          <AlertDescription_Shadcn_ className="mt-3">
+            <Button asChild type="default">
+              <Link
+                href={
+                  databaseNeedsUpgrading
+                    ? `/project/${ref}/settings/infrastructure`
+                    : `/project/${ref}/database/extensions?filter=wrappers`
+                }
+              >
+                {databaseNeedsUpgrading ? 'Upgrade database' : 'View wrappers extension'}
+              </Link>
+            </Button>
+          </AlertDescription_Shadcn_>
+        </Alert_Shadcn_>
+      )}
 
       <WrapperTableEditor
         visible={isEditingTable}
@@ -289,4 +336,4 @@ const CreateWrapper = () => {
   )
 }
 
-export default observer(CreateWrapper)
+export default CreateWrapper

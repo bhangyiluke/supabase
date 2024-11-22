@@ -1,8 +1,8 @@
-import * as Tooltip from '@radix-ui/react-tooltip'
-import { useParams } from 'common'
+import { Search } from 'lucide-react'
 import { useState } from 'react'
-import { Button, IconSearch, Input, Modal } from 'ui'
+import { toast } from 'sonner'
 
+import { useParams } from 'common'
 import {
   ScaffoldActionsContainer,
   ScaffoldActionsGroup,
@@ -10,19 +10,21 @@ import {
   ScaffoldFilterAndContent,
   ScaffoldSectionContent,
 } from 'components/layouts/Scaffold'
-import ConfirmationModal from 'components/ui/ConfirmationModal'
+import { ButtonTooltip } from 'components/ui/ButtonTooltip'
+import { useOrganizationRolesV2Query } from 'data/organization-members/organization-roles-query'
 import { useOrganizationMemberDeleteMutation } from 'data/organizations/organization-member-delete-mutation'
 import { useOrganizationMembersQuery } from 'data/organizations/organization-members-query'
-import { useOrganizationRolesQuery } from 'data/organizations/organization-roles-query'
 import { usePermissionsQuery } from 'data/permissions/permissions-query'
-import { useIsFeatureEnabled, useSelectedOrganization, useStore } from 'hooks'
+import { useIsFeatureEnabled } from 'hooks/misc/useIsFeatureEnabled'
+import { useSelectedOrganization } from 'hooks/misc/useSelectedOrganization'
 import { useProfile } from 'lib/profile'
-import InviteMemberButton from './InviteMemberButton'
+import { Input } from 'ui'
+import ConfirmationModal from 'ui-patterns/Dialogs/ConfirmationModal'
+import { InviteMemberButton } from './InviteMemberButton'
 import MembersView from './MembersView'
 import { hasMultipleOwners, useGetRolesManagementPermissions } from './TeamSettings.utils'
 
 const TeamSettings = () => {
-  const { ui } = useStore()
   const { slug } = useParams()
 
   const {
@@ -35,13 +37,13 @@ const TeamSettings = () => {
   const isOwner = selectedOrganization?.is_owner
 
   const { data: permissions } = usePermissionsQuery()
-  const { data: rolesData } = useOrganizationRolesQuery({ slug })
+  const { data: rolesData } = useOrganizationRolesV2Query({ slug })
   const { data: members } = useOrganizationMembersQuery({ slug })
 
-  const roles = rolesData?.roles ?? []
+  const roles = rolesData?.org_scoped_roles ?? []
 
   const { rolesAddable } = useGetRolesManagementPermissions(
-    selectedOrganization?.id,
+    selectedOrganization?.slug,
     roles,
     permissions ?? []
   )
@@ -52,25 +54,25 @@ const TeamSettings = () => {
   const canAddMembers = rolesAddable.length > 0
   const canLeave = !isOwner || (isOwner && hasMultipleOwners(members, roles))
 
-  const { mutateAsync: deleteMember } = useOrganizationMemberDeleteMutation()
+  const { mutate: deleteMember } = useOrganizationMemberDeleteMutation({
+    onSuccess: () => {
+      setIsLeaving(false)
+      setIsLeaveTeamModalOpen(false)
+      window?.location.replace('/') // Force reload to clear Store
+    },
+    onError: (error) => {
+      setIsLeaving(false)
+      toast.error(`Failed to leave organization: ${error?.message}`)
+    },
+  })
 
   const [isLeaveTeamModalOpen, setIsLeaveTeamModalOpen] = useState(false)
 
   const leaveTeam = async () => {
+    if (!slug) return console.error('Org slug is required')
+
     setIsLeaving(true)
-    try {
-      if (!slug) return console.error('Org slug is required')
-      await deleteMember({ slug, gotrueId: profile!.gotrue_id })
-      setIsLeaveTeamModalOpen(false)
-      window?.location.replace('/') // Force reload to clear Store
-    } catch (error: any) {
-      ui.setNotification({
-        category: 'error',
-        message: `Failed to leave organization: ${error?.message}`,
-      })
-    } finally {
-      setIsLeaving(false)
-    }
+    deleteMember({ slug, gotrueId: profile!.gotrue_id })
   }
 
   return (
@@ -79,7 +81,7 @@ const TeamSettings = () => {
         <ScaffoldFilterAndContent>
           <ScaffoldActionsContainer className="justify-between">
             <Input
-              icon={<IconSearch size="tiny" />}
+              icon={<Search size={12} />}
               size="small"
               value={searchString}
               onChange={(e: any) => setSearchString(e.target.value)}
@@ -91,50 +93,25 @@ const TeamSettings = () => {
               {organizationMembersCreationEnabled &&
                 canAddMembers &&
                 profile !== undefined &&
-                selectedOrganization !== undefined && (
-                  <div>
-                    <InviteMemberButton
-                      orgId={selectedOrganization.id}
-                      userId={profile.id}
-                      members={members ?? []}
-                      roles={roles}
-                      rolesAddable={rolesAddable}
-                    />
-                  </div>
-                )}
+                selectedOrganization !== undefined && <InviteMemberButton />}
               {/* if organizationMembersDeletionEnabled is false, you also can't delete yourself */}
               {organizationMembersDeletionEnabled && (
-                <div>
-                  <Tooltip.Root delayDuration={0}>
-                    <Tooltip.Trigger asChild>
-                      <Button
-                        type="default"
-                        disabled={!canLeave}
-                        onClick={() => setIsLeaveTeamModalOpen(true)}
-                        loading={isLeaving}
-                      >
-                        Leave team
-                      </Button>
-                    </Tooltip.Trigger>
-                    {!canLeave && (
-                      <Tooltip.Portal>
-                        <Tooltip.Content side="bottom">
-                          <Tooltip.Arrow className="radix-tooltip-arrow" />
-                          <div
-                            className={[
-                              'rounded bg-alternative py-1 px-2 leading-none shadow',
-                              'border border-background',
-                            ].join(' ')}
-                          >
-                            <span className="text-xs text-foreground">
-                              An organization requires at least 1 owner
-                            </span>
-                          </div>
-                        </Tooltip.Content>
-                      </Tooltip.Portal>
-                    )}
-                  </Tooltip.Root>
-                </div>
+                <>
+                  <ButtonTooltip
+                    type="default"
+                    loading={isLeaving}
+                    disabled={!canLeave}
+                    tooltip={{
+                      content: {
+                        side: 'bottom',
+                        text: !canLeave ? 'An organization requires at least 1 owner' : undefined,
+                      },
+                    }}
+                    onClick={() => setIsLeaveTeamModalOpen(true)}
+                  >
+                    Leave team
+                  </ButtonTooltip>
+                </>
               )}
             </ScaffoldActionsGroup>
           </ScaffoldActionsContainer>
@@ -145,19 +122,35 @@ const TeamSettings = () => {
       </ScaffoldContainerLegacy>
 
       <ConfirmationModal
+        size="medium"
         visible={isLeaveTeamModalOpen}
-        header="Are you sure?"
-        buttonLabel="Leave"
-        onSelectCancel={() => setIsLeaveTeamModalOpen(false)}
-        onSelectConfirm={() => {
-          leaveTeam()
+        title="Confirm to leave organization"
+        confirmLabel="Leave"
+        variant="warning"
+        alert={{
+          title: 'All of your user content will be permanently removed.',
+          description: (
+            <div>
+              <p>
+                Leaving the organization will delete all of your saved content in the projects of
+                the organization, which includes:
+              </p>
+              <ul className="list-disc pl-4">
+                <li>
+                  SQL snippets <span className="text-foreground">(both private and shared)</span>
+                </li>
+                <li>Custom reports</li>
+                <li>Log Explorer queries</li>
+              </ul>
+            </div>
+          ),
         }}
+        onCancel={() => setIsLeaveTeamModalOpen(false)}
+        onConfirm={() => leaveTeam()}
       >
-        <Modal.Content>
-          <p className="py-4 text-sm text-foreground-light">
-            Are you sure you want to leave this organization? This is permanent.
-          </p>
-        </Modal.Content>
+        <p className="text-sm text-foreground-light">
+          Are you sure you want to leave this organization? This is permanent.
+        </p>
       </ConfirmationModal>
     </>
   )

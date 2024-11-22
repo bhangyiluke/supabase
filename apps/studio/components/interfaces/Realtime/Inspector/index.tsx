@@ -1,6 +1,7 @@
+import { useParams } from 'common'
 import { useState } from 'react'
 
-import { useParams } from 'common'
+import { useSendEventMutation } from 'data/telemetry/send-event-mutation'
 import { Header } from './Header'
 import MessagesTable from './MessagesTable'
 import { SendMessageModal } from './SendMessageModal'
@@ -21,6 +22,7 @@ export const RealtimeInspector = () => {
     token: '', // will be filled out by RealtimeTokensPopover
     schema: 'public',
     table: '*',
+    isChannelPrivate: false,
     filter: undefined,
     bearer: null,
     enablePresence: true,
@@ -28,7 +30,8 @@ export const RealtimeInspector = () => {
     enableBroadcast: true,
   })
 
-  const { logData, sendMessage } = useRealtimeMessages(realtimeConfig)
+  const { mutate: sendEvent } = useSendEventMutation()
+  const { logData, sendMessage } = useRealtimeMessages(realtimeConfig, setRealtimeConfig)
 
   return (
     <div className="flex flex-col grow h-full">
@@ -47,8 +50,12 @@ export const RealtimeInspector = () => {
         visible={sendMessageShown}
         onSelectCancel={() => setSendMessageShown(false)}
         onSelectConfirm={(v) => {
-          sendMessage(v.message, v.payload)
-          setSendMessageShown(false)
+          sendEvent({
+            category: 'realtime_inspector',
+            action: 'send_broadcast_message',
+            label: 'realtime_inspector_results',
+          })
+          sendMessage(v.message, v.payload, () => setSendMessageShown(false))
         }}
       />
     </div>

@@ -1,37 +1,37 @@
-import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
-import { Button, IconExternalLink } from 'ui'
+
+import { Markdown } from 'components/interfaces/Markdown'
+import { ReactNode } from 'react'
+import { cn } from 'ui'
+import { DocsButton } from '../DocsButton'
 
 const FormHeader = ({
   title,
   description,
   docsUrl,
+  actions,
+  className,
 }: {
   title: string
   description?: string
   docsUrl?: string
+  actions?: ReactNode
+  className?: string
 }) => {
   return (
-    <div className="mb-6 flex items-center justify-between">
+    <div className={cn(`mb-6 flex items-center justify-between gap-x-4 ${className}`)}>
       <div className="space-y-1">
         <h3 className="text-foreground text-xl">
           <ReactMarkdown unwrapDisallowed disallowedElements={['p']}>
             {title}
           </ReactMarkdown>
         </h3>
-        {description && (
-          <div className="text-foreground-lighter text-sm">
-            <ReactMarkdown>{description}</ReactMarkdown>
-          </div>
-        )}
+        {description && <Markdown content={description} className="max-w-full" />}
       </div>
-      {docsUrl !== undefined && (
-        <Button asChild type="default" icon={<IconExternalLink />}>
-          <Link href={docsUrl} target="_blank" rel="noreferrer">
-            Documentation
-          </Link>
-        </Button>
-      )}
+      <div className="flex items-center gap-x-2">
+        {docsUrl !== undefined && <DocsButton href={docsUrl} />}
+        {actions}
+      </div>
     </div>
   )
 }

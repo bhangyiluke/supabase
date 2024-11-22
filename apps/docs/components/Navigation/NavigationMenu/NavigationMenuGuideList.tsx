@@ -1,39 +1,47 @@
+'use client'
+
 import * as Accordion from '@radix-ui/react-accordion'
-import { useRouter } from 'next/router'
-import React from 'react'
-import NavigationMenuGuideListItems from './NavigationMenuGuideListItems'
+
+import { type NavMenuSection } from '../Navigation.types'
 import * as NavItems from './NavigationMenu.constants'
+import NavigationMenuGuideListItems from './NavigationMenuGuideListItems'
+import { usePathname } from 'next/navigation'
 
-interface Props {
+const NavigationMenuGuideList = ({
+  id,
+  additionalNavItems,
+}: {
   id: string
-  collapsible?: boolean
-  value?: string[]
-}
-const NavigationMenuGuideList: React.FC<Props> = ({ id, value }) => {
-  const router = useRouter()
+  additionalNavItems?: Partial<NavMenuSection>[]
+}) => {
+  const pathname = usePathname()
+  const firstLevelRoute = pathname?.split('/')?.slice(0, 4)?.join('/')
 
-  const menu = NavItems[id]
+  let menu = NavItems[id]
 
-  // get url
-  const url = router.asPath
-
-  // We need to decide how deep we want the menu to be for matching urls
-  // if the links are really deep, we don't want to match all the way out
-  // But we need to reach out further to make the structure of  /resources/postgres/  work
-  // look at /resources/postgres/  vs /auth/phone-login for how these are different
-  let firstLevelRoute
-  if (url.includes('resources/postgres/')) {
-    firstLevelRoute = url?.split('/')?.slice(0, 5)?.join('/')
-  } else {
-    firstLevelRoute = url?.split('/')?.slice(0, 4)?.join('/')
+  if (id === 'integrations' && additionalNavItems) {
+    const integrationsListIndex = menu.items.findIndex((item) => item.name === 'Integrations')
+    if (integrationsListIndex !== -1) {
+      menu = {
+        ...menu,
+        items: [
+          ...menu.items.slice(0, integrationsListIndex),
+          {
+            ...menu.items[integrationsListIndex],
+            items: [...menu.items[integrationsListIndex].items, ...additionalNavItems],
+          },
+          ...menu.items.slice(integrationsListIndex + 1),
+        ],
+      }
+    }
   }
 
   return (
     <Accordion.Root
       collapsible={true}
       key={id}
-      type={value ? 'multiple' : 'single'}
-      value={value ?? firstLevelRoute}
+      type="single"
+      value={firstLevelRoute}
       className="transition-all duration-150 ease-out opacity-100 ml-0 delay-150"
     >
       <NavigationMenuGuideListItems menu={menu} id={id} />

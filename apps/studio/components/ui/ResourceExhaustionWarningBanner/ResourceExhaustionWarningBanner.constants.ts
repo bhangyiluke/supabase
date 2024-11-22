@@ -1,4 +1,22 @@
-export const RESOURCE_WARNING_MESSAGES = {
+interface ResourceWarningMessage {
+  // should match pathnames, ex: ('/', 'project/[ref]/auth', 'project/[ref]/database', '/project/[ref]/settings/auth')
+  restrictToRoutes?: string[]
+
+  bannerContent: {
+    warning: { title: string; description: string }
+    critical: { title?: string; description?: string }
+    allowDismissable?: boolean
+  }
+  cardContent: {
+    warning: { title: string; description: string }
+    critical: { title?: string; description?: string }
+  }
+  docsUrl?: string
+  buttonText?: string
+  metric: string | null
+}
+
+export const RESOURCE_WARNING_MESSAGES: Record<string, ResourceWarningMessage> = {
   is_readonly_mode_enabled: {
     bannerContent: {
       warning: {
@@ -25,7 +43,7 @@ export const RESOURCE_WARNING_MESSAGES = {
       },
     },
     docsUrl: 'https://supabase.com/docs/guides/platform/database-size#disabling-read-only-mode',
-    buttonText: 'View database settings',
+    buttonText: 'View Compute and Disk',
     metric: 'read_only',
   },
   disk_io_exhaustion: {
@@ -60,23 +78,23 @@ export const RESOURCE_WARNING_MESSAGES = {
     bannerContent: {
       warning: {
         title:
-          'Your project is about to exhaust its disk space budget, and may become unresponsive once fully exhausted',
+          'Your project is about to exhaust its available disk space, and may become unresponsive once fully exhausted',
         description:
           'You can opt to increase your disk size up to 200GB on the database settings page.',
       },
       critical: {
-        title: 'Your project has exhausted its disk space budget, and may become unresponsive',
+        title: 'Your project has exhausted its available disk space, and may become unresponsive',
         description:
           'You can opt to increase your disk size up to 200GB on the database settings page.',
       },
     },
     cardContent: {
       warning: {
-        title: 'Project is exhausting disk space budget',
+        title: 'Project is exhausting its available disk space',
         description: 'It may become unresponsive if fully exhausted',
       },
       critical: {
-        title: 'Project has exhausted disk space budget',
+        title: 'Project has exhausted its available disk space',
         description: 'It may become unresponsive',
       },
     },
@@ -139,6 +157,34 @@ export const RESOURCE_WARNING_MESSAGES = {
     buttonText: 'Check usage',
     metric: 'ram',
   },
+  auth_rate_limit_exhaustion: {
+    // [Joel] There is no critical warning as there is no notion of critical rate limits for auth at the moment
+    bannerContent: {
+      warning: {
+        title:
+          'Your project has exceeded email rate limits in the past 24 hours and may not reliably send auth related emails to users',
+        description:
+          'Set up a custom SMTP and adjust rate limits where necessary to ensure that emails are sent out reliably.',
+      },
+      critical: {
+        title: undefined,
+        description: undefined,
+      },
+    },
+    cardContent: {
+      warning: {
+        title: 'Your project has exceeded email rate limits',
+        description: `You will need to set up a custom SMTP provider and adjust rate limits where necessary`,
+      },
+      critical: {
+        title: undefined,
+        description: undefined,
+      },
+    },
+    docsUrl: 'https://supabase.com/docs/guides/platform/going-into-prod#auth-rate-limits',
+    buttonText: 'Enable Custom SMTP',
+    metric: 'auth_email_rate_limit',
+  },
   multiple_resource_warnings: {
     bannerContent: {
       warning: {
@@ -166,5 +212,37 @@ export const RESOURCE_WARNING_MESSAGES = {
     docsUrl: undefined,
     buttonText: 'Check usage',
     metric: null,
+  },
+  // [Joshen] We can remove this once auth team gives the signal to
+  auth_restricted_email_sending: {
+    restrictToRoutes: ['/project/[ref]/auth', '/project/[ref]/settings/auth'], // project home, auth, settings
+    bannerContent: {
+      warning: {
+        title: "Authentication emails are only sent to organization members' email addresses",
+        description:
+          'Set up a custom SMTP provider to handle flows like password reset which require sending emails to any user',
+      },
+      critical: {
+        title: "Authentication emails are only sent to organization members' email addresses",
+        description:
+          'Set up a custom SMTP provider to handle flows like password reset which require sending emails to any user',
+      },
+      allowDismissable: true,
+    },
+    cardContent: {
+      warning: {
+        title: 'Auth emails are restricted',
+        description:
+          "Your project can only send Auth emails to your organization's members. Set up a custom SMTP provider to send Auth emails to any user",
+      },
+      critical: {
+        title: 'Auth emails are restricted',
+        description:
+          "Your project can only send Auth emails to your organization's members. Set up a custom SMTP provider to send Auth emails to any user.",
+      },
+    },
+    docsUrl: 'https://github.com/orgs/supabase/discussions/29370',
+    buttonText: 'Set up custom SMTP now',
+    metric: 'auth_restricted_email_sending',
   },
 }

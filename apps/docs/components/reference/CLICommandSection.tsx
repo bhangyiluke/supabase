@@ -1,9 +1,11 @@
+import { ChevronRight } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
-import { CodeBlock, IconChevronRight, Tabs } from 'ui'
-import spec from '~/spec/cli_v1_commands.yaml' assert { type: 'yml' }
+import { CodeBlock } from 'ui'
 import Options from '~/components/Options'
 import Param from '~/components/Params'
+import { TabPanel, Tabs } from '~/features/ui/Tabs'
 import RefSubLayout from '~/layouts/ref/RefSubLayout'
+import spec from '~/spec/cli_v1_commands.yaml' assert { type: 'yml' }
 import RefDetailCollapse from './RefDetailCollapse'
 
 export type Flag = {
@@ -79,7 +81,7 @@ const CliCommandSection = (props) => {
                   <ReactMarkdown>{command.description}</ReactMarkdown>
                 </div>
               ) : (
-                <p className="capitalize mb-4 scroll-mt-16 mt-0 text-foreground-light text-base">
+                <p className="capitalize mb-4 scroll-mt-24 mt-0 text-foreground-light text-base">
                   {command.summary}
                 </p>
               )}
@@ -92,7 +94,7 @@ const CliCommandSection = (props) => {
                   {command.subcommands.map((subcommand) => (
                     <li key={subcommand} className="flex items-center gap-3">
                       <div className="text-foreground-muted">
-                        <IconChevronRight size={14} strokeWidth={2} />
+                        <ChevronRight size={14} strokeWidth={2} />
                       </div>
                       <a
                         href={`#${subcommand}`}
@@ -142,7 +144,7 @@ const CliCommandSection = (props) => {
                 command.examples.map((example) => {
                   const exampleId = `${command.id}-${example.id}`
                   return (
-                    <Tabs.Panel
+                    <TabPanel
                       id={exampleId}
                       key={exampleId}
                       label={example.name}
@@ -181,12 +183,12 @@ const CliCommandSection = (props) => {
                           </div>
                         </RefDetailCollapse>
                       )}
-                    </Tabs.Panel>
+                    </TabPanel>
                   )
                 })
               ) : (
                 // TODO: remove this block once all commands have examples
-                <Tabs.Panel
+                <TabPanel
                   id={`${command.id}-basic-usage`}
                   key={`${command.id}-basic-usage`}
                   label="Basic usage"
@@ -199,7 +201,7 @@ const CliCommandSection = (props) => {
                   >
                     {command.usage}
                   </CodeBlock>
-                </Tabs.Panel>
+                </TabPanel>
               )}
             </Tabs>
           </div>

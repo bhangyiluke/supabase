@@ -1,39 +1,34 @@
-import { useTelemetryProps } from 'common'
-import { useProjectContext } from 'components/layouts/ProjectLayout/ProjectContext'
-import { useStore } from 'hooks'
-import { copyToClipboard } from 'lib/helpers'
-import Telemetry from 'lib/telemetry'
 import { compact, isObject, isString, map } from 'lodash'
-import { useRouter } from 'next/router'
+import { ChevronDownIcon, Clipboard, Download } from 'lucide-react'
+import { markdownTable } from 'markdown-table'
 import { useMemo, useRef } from 'react'
 import { CSVLink } from 'react-csv'
-import { useSqlEditorStateSnapshot } from 'state/sql-editor'
+import { toast } from 'sonner'
+
+import { useProjectContext } from 'components/layouts/ProjectLayout/ProjectContext'
+import { useSendEventMutation } from 'data/telemetry/send-event-mutation'
+import { copyToClipboard } from 'lib/helpers'
+import { useSqlEditorV2StateSnapshot } from 'state/sql-editor-v2'
 import {
   Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  IconChevronDown,
-  IconClipboard,
-  IconDownload,
 } from 'ui'
-// @ts-ignore
-import MarkdownTable from 'markdown-table'
 
 export type ResultsDropdownProps = {
   id: string
-  isExecuting?: boolean
 }
 
-const ResultsDropdown = ({ id, isExecuting }: ResultsDropdownProps) => {
+const ResultsDropdown = ({ id }: ResultsDropdownProps) => {
   const { project } = useProjectContext()
-  const snap = useSqlEditorStateSnapshot()
-  const telemetryProps = useTelemetryProps()
-  const result = snap.results?.[id]?.[0] ?? undefined
-  const { ui } = useStore()
+  const snapV2 = useSqlEditorV2StateSnapshot()
+
+  const result = snapV2.results?.[id]?.[0] ?? undefined
   const csvRef = useRef<CSVLink & HTMLAnchorElement & { link: HTMLAnchorElement }>(null)
-  const router = useRouter()
+
+  const { mutate: sendEvent } = useSendEventMutation()
 
   const csvData = useMemo(() => {
     if (result?.rows) {
@@ -71,11 +66,7 @@ const ResultsDropdown = ({ id, isExecuting }: ResultsDropdownProps) => {
 
   function onDownloadCSV() {
     csvRef.current?.link.click()
-    Telemetry.sendEvent(
-      { category: 'sql_editor', action: 'sql_download_csv', label: '' },
-      telemetryProps,
-      router
-    )
+    sendEvent({ category: 'sql_editor', action: 'sql_download_csv', label: '' })
   }
 
   function onCopyAsMarkdown() {
@@ -91,15 +82,24 @@ const ResultsDropdown = ({ id, isExecuting }: ResultsDropdownProps) => {
         return temp
       })
       const table = [columns].concat(rows)
-      const markdownData = MarkdownTable(table)
+      const markdownData = markdownTable(table)
 
       copyToClipboard(markdownData, () => {
-        ui.setNotification({ category: 'success', message: 'Copied results to clipboard' })
-        Telemetry.sendEvent(
-          { category: 'sql_editor', action: 'sql_copy_as_markdown', label: '' },
-          telemetryProps,
-          router
-        )
+        toast.success('Copied results to clipboard')
+        sendEvent({ category: 'sql_editor', action: 'sql_copy_as_markdown', label: '' })
+      })
+    }
+  }
+
+  function onCopyAsJSON() {
+    if (navigator) {
+      if (!result || !result.rows) return 'results is empty'
+      if (result.rows.constructor !== Array && !!result.error) return result.error
+      if (result.rows.length == 0) return 'results is empty'
+
+      copyToClipboard(JSON.stringify(result.rows, null, 2), () => {
+        toast.success('Copied results to clipboard')
+        sendEvent({ category: 'sql_editor', action: 'sql_copy_as_json', label: '' })
       })
     }
   }
@@ -107,14 +107,8 @@ const ResultsDropdown = ({ id, isExecuting }: ResultsDropdownProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="text" iconRight={<IconChevronDown />}>
-          <span>
-            Results
-            {!isExecuting &&
-              result &&
-              result.rows.length > 0 &&
-              ` (${result.rows.length.toLocaleString()})`}
-          </span>
+        <Button type="text" iconRight={<ChevronDownIcon size={14} />}>
+          Export
         </Button>
       </DropdownMenuTrigger>
 
@@ -123,20 +117,22 @@ const ResultsDropdown = ({ id, isExecuting }: ResultsDropdownProps) => {
         className="hidden"
         headers={headers}
         data={csvData}
-        filename={`supabase_${project?.ref}_${snap.snippets[id]?.snippet.name}.csv`}
+        filename={`supabase_${project?.ref}_${snapV2.snippets[id]?.snippet.name}.csv`}
       />
 
       <DropdownMenuContent side="bottom" align="start">
-        <>
-          <DropdownMenuItem onClick={onDownloadCSV} className="space-x-2">
-            <IconDownload size="tiny" />
-            <p>Download CSV</p>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={onCopyAsMarkdown} className="space-x-2">
-            <IconClipboard size="tiny" />
-            <p>Copy as markdown</p>
-          </DropdownMenuItem>
-        </>
+        <DropdownMenuItem onClick={onDownloadCSV} className="space-x-2">
+          <Download size={14} />
+          <p>Download CSV</p>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onCopyAsMarkdown} className="space-x-2">
+          <Clipboard size={14} />
+          <p>Copy as markdown</p>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onCopyAsJSON} className="space-x-2">
+          <Clipboard size={14} />
+          <p>Copy as JSON</p>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
