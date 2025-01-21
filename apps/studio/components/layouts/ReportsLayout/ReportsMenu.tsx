@@ -15,7 +15,7 @@ import { Content, useContentQuery } from 'data/content/content-query'
 import { useCheckPermissions } from 'hooks/misc/useCheckPermissions'
 import { useIsFeatureEnabled } from 'hooks/misc/useIsFeatureEnabled'
 import { useProfile } from 'lib/profile'
-import { AlertDescription_Shadcn_, AlertTitle_Shadcn_, Alert_Shadcn_, Button, Menu, cn } from 'ui'
+import { Menu, cn } from 'ui'
 import ConfirmationModal from 'ui-patterns/Dialogs/ConfirmationModal'
 import { ReportMenuItem } from './ReportMenuItem'
 
@@ -31,7 +31,10 @@ const ReportsMenu = () => {
     subject: { id: profile?.id },
   })
 
-  const { data: content, isLoading } = useContentQuery(ref)
+  const { data: content, isLoading } = useContentQuery({
+    projectRef: ref,
+    type: 'report',
+  })
   const { mutate: deleteReport, isLoading: isDeleting } = useContentDeleteMutation({
     onSuccess: () => {
       setDeleteModalOpen(false)
@@ -154,7 +157,7 @@ const ReportsMenu = () => {
               {reportMenuItems.map((item) => (
                 <ReportMenuItem
                   key={item.id}
-                  item={item}
+                  item={item as any}
                   pageKey={pageKey}
                   onSelectEdit={() => {
                     setSelectedReportToUpdate(item.report)

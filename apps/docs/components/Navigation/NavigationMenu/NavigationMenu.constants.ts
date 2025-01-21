@@ -212,7 +212,8 @@ export const GLOBAL_MENU_ITEMS: GlobalMenuItems = [
       label: 'Resources',
       menuItems: [
         [
-          /*           {
+          /*
+                     {
             label: 'Troubleshooting',
             icon: 'contributing',
             href: '/guides/troubleshooting',
@@ -260,6 +261,7 @@ export const gettingstarted: NavMenuConstant = {
         { name: 'React', url: '/guides/getting-started/quickstarts/reactjs' },
         { name: 'NuxtJS', url: '/guides/getting-started/quickstarts/nuxtjs' },
         { name: 'Vue', url: '/guides/getting-started/quickstarts/vue' },
+        { name: 'Hono', url: '/guides/getting-started/quickstarts/hono' },
         { name: 'Flutter', url: '/guides/getting-started/quickstarts/flutter' },
         { name: 'iOS SwiftUI', url: '/guides/getting-started/quickstarts/ios-swiftui' },
         {
@@ -767,6 +769,14 @@ const guiQuickstarts: NavMenuSection = {
       name: 'DBeaver',
       url: '/guides/database/dbeaver',
     },
+    {
+      name: 'Metabase',
+      url: '/guides/database/metabase',
+    },
+    {
+      name: 'Beekeeper Studio',
+      url: '/guides/database/beekeeper-studio',
+    },
   ],
 }
 
@@ -1017,8 +1027,16 @@ export const database: NavMenuConstant = {
           url: '/guides/database/extensions/pg_stat_statements',
         },
         {
+          name: 'pg_repack: Storage Optimization',
+          url: '/guides/database/extensions/pg_repack',
+        },
+        {
           name: 'PostGIS: Geo queries',
           url: '/guides/database/extensions/postgis',
+        },
+        {
+          name: 'pgmq: Queues',
+          url: '/guides/database/extensions/pgmq',
         },
         {
           name: 'pgsodium (pending deprecation): Encryption Features',
@@ -1164,7 +1182,10 @@ export const queues: NavMenuConstant = {
     {
       name: 'References',
       url: undefined,
-      items: [{ name: 'API', url: '/guides/queues/api' }],
+      items: [
+        { name: 'API', url: '/guides/queues/api' },
+        { name: 'PGMQ Extension', url: '/guides/queues/pgmq' },
+      ],
     },
   ],
 }
@@ -1338,6 +1359,10 @@ export const functions: NavMenuConstant = {
         {
           name: 'Running AI Models',
           url: '/guides/functions/ai-models',
+        },
+        {
+          name: 'Wasm modules',
+          url: '/guides/functions/wasm',
         },
         {
           name: 'Deploying with CI / CD pipelines',
@@ -1548,6 +1573,10 @@ export const realtime: NavMenuConstant = {
           name: 'Listening to Postgres Changes with Flutter',
           url: '/guides/realtime/realtime-listening-flutter',
         },
+        {
+          name: 'Migrate to Broadcast Changes',
+          url: '/guides/realtime/migrate-from-postgres-changes',
+        },
       ],
     },
     {
@@ -1557,6 +1586,7 @@ export const realtime: NavMenuConstant = {
         { name: 'Quotas', url: '/guides/realtime/quotas' },
         { name: 'Architecture', url: '/guides/realtime/architecture' },
         { name: 'Message Protocol', url: '/guides/realtime/protocol', items: [] },
+        { name: 'Benchmarks', url: '/guides/realtime/benchmarks' },
       ],
     },
     {
@@ -1979,6 +2009,16 @@ export const platform: NavMenuConstant = {
         {
           name: 'Migrating within Supabase',
           url: '/guides/platform/migrating-within-supabase',
+          items: [
+            {
+              name: 'Restore Dashboard backup',
+              url: '/guides/platform/migrating-within-supabase/dashboard-restore',
+            },
+            {
+              name: 'Backup and restore using CLI',
+              url: '/guides/platform/migrating-within-supabase/backup-restore',
+            },
+          ],
         },
         {
           name: 'Migrating to Supabase',

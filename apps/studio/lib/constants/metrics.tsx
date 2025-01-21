@@ -1,5 +1,20 @@
 import { Auth, Realtime, Storage } from 'icons'
-import { ActivityIcon, DatabaseIcon, ServerIcon, HeartIcon } from 'lucide-react'
+import { ActivityIcon, DatabaseIcon, HeartIcon, ServerIcon } from 'lucide-react'
+import { ReactNode } from 'react'
+
+export type Metric = {
+  key: string
+  label: string
+  provider?: string
+  category?: MetricCategory
+  id?: string
+}
+
+type MetricCategory = {
+  label: string
+  icon: ReactNode
+  key: string
+}
 
 export const METRIC_CATEGORIES = {
   API: {
@@ -39,7 +54,7 @@ export const METRIC_CATEGORIES = {
   },
 }
 
-export const METRICS = [
+export const METRICS: Metric[] = [
   {
     key: 'avg_cpu_usage',
     label: 'Average CPU % usage',
@@ -67,12 +82,6 @@ export const METRICS = [
   {
     key: 'ram_usage',
     label: 'Memory % usage',
-    provider: 'infra-monitoring',
-    category: METRIC_CATEGORIES.INSTANCE,
-  },
-  {
-    key: 'swap_usage',
-    label: 'Swap % usage',
     provider: 'infra-monitoring',
     category: METRIC_CATEGORIES.INSTANCE,
   },
