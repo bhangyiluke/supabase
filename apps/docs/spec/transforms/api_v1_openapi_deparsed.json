@@ -8994,6 +8994,9 @@
                           },
                           "import_map_path": {
                             "type": "string"
+                          },
+                          "compute_multiplier": {
+                            "type": "number"
                           }
                         },
                         "required": [
@@ -9150,6 +9153,9 @@
                     },
                     "import_map_path": {
                       "type": "string"
+                    },
+                    "compute_multiplier": {
+                      "type": "number"
                     }
                   },
                   "required": ["version", "id", "slug", "name", "status"]
@@ -9243,6 +9249,9 @@
                     },
                     "import_map_path": {
                       "type": "string"
+                    },
+                    "compute_multiplier": {
+                      "type": "number"
                     }
                   },
                   "required": [
@@ -9346,6 +9355,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "compute_multiplier",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 4,
+              "type": "number"
+            }
           }
         ],
         "requestBody": {
@@ -9363,6 +9382,11 @@
                   },
                   "verify_jwt": {
                     "type": "boolean"
+                  },
+                  "compute_multiplier": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 4
                   }
                 }
               }
@@ -14878,6 +14902,9 @@
                 },
                 "import_map_path": {
                   "type": "string"
+                },
+                "compute_multiplier": {
+                  "type": "number"
                 }
               },
               "required": ["version", "created_at", "updated_at", "id", "slug", "name", "status"]
@@ -14948,6 +14975,51 @@
         "required": ["file", "metadata"]
       },
       "DeployFunctionResponse": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "updated_at": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "enum": ["ACTIVE", "REMOVED", "THROTTLED"],
+            "type": "string"
+          },
+          "verify_jwt": {
+            "type": "boolean"
+          },
+          "import_map": {
+            "type": "boolean"
+          },
+          "entrypoint_path": {
+            "type": "string"
+          },
+          "import_map_path": {
+            "type": "string"
+          },
+          "compute_multiplier": {
+            "type": "number"
+          }
+        },
+        "required": ["version", "id", "slug", "name", "status"]
+      },
+      "FunctionSlugResponse": {
         "type": "object",
         "properties": {
           "version": {

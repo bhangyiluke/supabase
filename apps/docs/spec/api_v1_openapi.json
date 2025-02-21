@@ -4702,7 +4702,8 @@
           "verify_jwt": { "type": "boolean" },
           "import_map": { "type": "boolean" },
           "entrypoint_path": { "type": "string" },
-          "import_map_path": { "type": "string" }
+          "import_map_path": { "type": "string" },
+          "compute_multiplier": { "type": "number" }
         },
         "required": ["version", "id", "slug", "name", "status"]
       },
