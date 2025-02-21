@@ -8665,9 +8665,6 @@
                       },
                       "import_map_path": {
                         "type": "string"
-                      },
-                      "compute_multiplier": {
-                        "type": "number"
                       }
                     },
                     "required": [
@@ -8701,7 +8698,8 @@
       "post": {
         "operationId": "v1-create-a-function",
         "summary": "Create a function",
-        "description": "Creates a function and adds it to the specified project.",
+        "description": "This endpoint is deprecated - use the deploy endpoint. Creates a function and adds it to the specified project.",
+        "deprecated": true,
         "parameters": [
           {
             "name": "ref",
@@ -8762,16 +8760,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "compute_multiplier",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 4,
-              "type": "number"
-            }
           }
         ],
         "requestBody": {
@@ -8793,11 +8781,6 @@
                   },
                   "verify_jwt": {
                     "type": "boolean"
-                  },
-                  "compute_multiplier": {
-                    "type": "number",
-                    "minimum": 1,
-                    "maximum": 4
                   }
                 },
                 "required": ["slug", "name", "body"]
@@ -8819,11 +8802,6 @@
                   },
                   "verify_jwt": {
                     "type": "boolean"
-                  },
-                  "compute_multiplier": {
-                    "type": "number",
-                    "minimum": 1,
-                    "maximum": 4
                   }
                 },
                 "required": ["slug", "name", "body"]
@@ -8874,9 +8852,6 @@
                     },
                     "import_map_path": {
                       "type": "string"
-                    },
-                    "compute_multiplier": {
-                      "type": "number"
                     }
                   },
                   "required": [
@@ -9428,11 +9403,6 @@
                   },
                   "verify_jwt": {
                     "type": "boolean"
-                  },
-                  "compute_multiplier": {
-                    "type": "number",
-                    "minimum": 1,
-                    "maximum": 4
                   }
                 }
               }
@@ -9482,9 +9452,6 @@
                     },
                     "import_map_path": {
                       "type": "string"
-                    },
-                    "compute_multiplier": {
-                      "type": "number"
                     }
                   },
                   "required": [
@@ -14831,9 +14798,6 @@
           },
           "import_map_path": {
             "type": "string"
-          },
-          "compute_multiplier": {
-            "type": "number"
           }
         },
         "required": ["version", "created_at", "updated_at", "id", "slug", "name", "status"]
@@ -14853,11 +14817,6 @@
           },
           "verify_jwt": {
             "type": "boolean"
-          },
-          "compute_multiplier": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 4
           }
         },
         "required": ["slug", "name", "body"]
@@ -15098,9 +15057,48 @@
           },
           "import_map_path": {
             "type": "string"
+          }
+        },
+        "required": ["version", "id", "slug", "name", "status"]
+      },
+      "FunctionSlugResponse": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer"
           },
-          "compute_multiplier": {
-            "type": "number"
+          "created_at": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "updated_at": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "enum": ["ACTIVE", "REMOVED", "THROTTLED"],
+            "type": "string"
+          },
+          "verify_jwt": {
+            "type": "boolean"
+          },
+          "import_map": {
+            "type": "boolean"
+          },
+          "entrypoint_path": {
+            "type": "string"
+          },
+          "import_map_path": {
+            "type": "string"
           }
         },
         "required": ["version", "created_at", "updated_at", "id", "slug", "name", "status"]
@@ -15116,11 +15114,6 @@
           },
           "verify_jwt": {
             "type": "boolean"
-          },
-          "compute_multiplier": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 4
           }
         }
       },
